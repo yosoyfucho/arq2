@@ -7,10 +7,7 @@
 #include <string.h>
 
 
-enum hip
-{
-	0,1,2
-};
+enum hip{0,1,2};
 
 enum smed
 {
