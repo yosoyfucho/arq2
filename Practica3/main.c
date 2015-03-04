@@ -70,16 +70,32 @@ struct cuenta_corriente
 };
 
 /*
+Variables compartidas
+*/
+
+struct cuenta_corriente cc[2];
+long comis_total = 0;
+long coefs[5]; /*coefs[0] = hip;
+                coefs[1] = smed;
+                coefs[2] = tarj;
+                coefs[3] = seg;
+                coefs[4] = nat;*/
+
+/*
 Mutexes y Variables de condición
 */
 
 pthread_mutex_t coefs_m = PTHREAD_MUTEX_INITIALIZER;
+pthread_cond_t coefs_update_cv = PTHREAD_COND_INITIALIZER;
+pthread_cond_t cuentas_cv = PTHREAD_COND_INITIALIZER;
+
 
 /*
 Prototipos de funciones
 */
 
 double double_rand();
+void h_update();
 
 
 /*
@@ -136,6 +152,7 @@ void h_update(){
             coefs[i]=valor;
         }
 
+        pthread_cond_signal(&coefs_update_cv);
         pthread_mutex_unlock(&coefs_m);
     }
 }
@@ -155,42 +172,50 @@ Programa principal
 
 int main(){
 
-    pthread_t hebras[NUM_THREADS];
+    pthread_t hebras_t[NUM_THREADS];
     int ret;
-
-    /*
-    Variables compartidas
-    */
-
-    struct cuenta_corriente cc[2];
-    long comis_total = 0;
-
-    /*
-    coefs[0] = hip;
-    coefs[1] = smed;
-    coefs[2] = tarj;
-    coefs[3] = seg;
-    coefs[4] = nat;
-    */
-    long coefs[5];
 
     cc[0].titular = (char *)malloc(sizeof(char));
     strcpy(cc[0].titular,"Lucia Penaranda");
     cc[0].saldo = 1000;
+    cc[0].hip = 0;
+    cc[0].smed = 1;
+    cc[0].tarj = 2;
+    cc[0].seg = 0;
+    cc[0].nat = 0;
+
 
     cc[1].titular = (char *)malloc(sizeof(char));
     strcpy(cc[1].titular,"Rafael Leon");
     cc[1].saldo = 1000;
+    cc[1].hip = 2;
+    cc[1].smed = 0;
+    cc[1].tarj = 1;
+    cc[1].seg = 1;
+    cc[1].nat = 1;
 
     #if DEBUG
         printf("cc[0].titular = %s\n",cc[0].titular);
         printf("cc[0].saldo Lucia = %ld\n", cc[0].saldo);
+        printf("cc[0].hip Lucia = %d\n", cc[0].hip);
+        printf("cc[0].smed Lucia = %d\n", cc[0].smed);
+        printf("cc[0].tarj Lucia = %d\n", cc[0].tarj);
+        printf("cc[0].seg Lucia = %d\n", cc[0].seg);
+        printf("cc[0].nat Lucia = %d\n", cc[0].nat);
+        printf("\n");
         printf("cc[1].titular = %s\n",cc[1].titular);
         printf("cc[1].saldo Rafa = %ld\n", cc[1].saldo);
+        printf("cc[1].hip Rafa = %d\n", cc[0].hip);
+        printf("cc[1].smed Rafa = %d\n", cc[0].smed);
+        printf("cc[1].tarj Rafa = %d\n", cc[0].tarj);
+        printf("cc[1].seg Rafa = %d\n", cc[0].seg);
+        printf("cc[1].nat Rafa = %d\n", cc[0].nat);
     #endif
 
     /*Inicializacion de los mutexes*/
     pthread_mutex_init(&coefs_m, NULL);
+    pthread_cond_init(&coefs_update_cv, NULL);
+    pthread_cond_init(&cuentas_cv, NULL);
 
     #if DEDUG
         printf("Se acaba de inicializar el mutex\n");
@@ -198,22 +223,22 @@ int main(){
 
     /*Creacion de los hilos*/
 
-    ret = pthread_create(&hebras[0], NULL, (void *)h_update, NULL);
+    ret = pthread_create(&hebras_t[0], NULL, (void *)h_update, NULL);
     if(ret){
         printf("ERROR en pthread_create\n");
         pthread_exit(NULL);
     }   
-    ret = pthread_create(&hebras[1], NULL, (void *)h_prod, NULL);
+    ret = pthread_create(&hebras_t[1], NULL, (void *)h_prod, NULL);
     if(ret){
         printf("ERROR en pthread_create\n");
         pthread_exit(NULL);
     } 
-    ret = pthread_create(&hebras[2], NULL, (void *)h_rentab, NULL);
+    ret = pthread_create(&hebras_t[2], NULL, (void *)h_rentab, NULL);
     if(ret){
         printf("ERROR en pthread_create\n");
         pthread_exit(NULL);
     } 
-    ret = pthread_create(&hebras[3], NULL, (void *)h_total, NULL);
+    ret = pthread_create(&hebras_t[3], NULL, (void *)h_total, NULL);
     if(ret){
         printf("ERROR en pthread_create\n");
         pthread_exit(NULL);
@@ -222,7 +247,7 @@ int main(){
     
     for(i=0;i<NUM_THREADS;i++){
 
-        ret = pthread_join(hebras[i], NULL);
+        ret = pthread_join(hebras_t[i], NULL);
 
         #if DEBUG
             printf("Ha terminado el hilo %d\n",i+1);
