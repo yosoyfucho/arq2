@@ -63,6 +63,8 @@ struct cuenta_corriente
     enum tarjeta tarj;
     enum seguros seg;
     enum naturaleza nat;
+    long comis_prod;
+    long comis_rentab;
 };
 
 /*
@@ -70,9 +72,56 @@ Variables globales
 */
 
 struct cuenta_corriente cc[2];
+long comis_total = 0;
+
+/*
+coefs[0] = hip;
+coefs[1] = smed;
+coefs[2] = tarj;
+coefs[3] = seg;
+coefs[4] = nat;
+*/
+long coefs[5];
 
 /*
 Mutexes y Variables de condición
+*/
+
+
+
+/*
+Prototipos de funciones
+*/
+
+
+
+/*
+Funcion h_prod()
+-Calcula comisiones por el concepto de productos contratados: hipoteca, tarjeta y seguros.
+cuentas[i].comis_prod = 10*coefs[HIP] + 10*coefs[TARJ] + 10*coefs[SEG]
+*/
+
+
+
+/*
+Funcion h_rentab()
+-Calcula comisiones por conceptos de saldo medio y tipo de cliente.
+cuentas[i].comis_rentab = 10*coefs[SMED] + 10*coefs[NAT]
+*/
+
+
+
+/*
+Funcion h_total()
+-Calcula la comision total cuando terminan h_prod y h_rentab.
+cuentas[i].comis_total = cuentas[i].comis_rentab + cuentas[i].comis_prod
+*/
+
+
+
+/*
+Funcion h_update()
+-Actualiza las comisiones periodicamente de forma asincrona con el calculo de comisiones.
 */
 
 
