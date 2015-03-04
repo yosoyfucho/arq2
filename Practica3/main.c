@@ -10,6 +10,8 @@ Constantes
 */
 
 #define NUM_THREADS 4
+#define RAND_MAX 1
+#define NUM_COEFS 5
 
 /*
 Bibliotecas
@@ -68,31 +70,16 @@ struct cuenta_corriente
 };
 
 /*
-Variables globales
-*/
-
-struct cuenta_corriente cc[2];
-long comis_total = 0;
-
-/*
-coefs[0] = hip;
-coefs[1] = smed;
-coefs[2] = tarj;
-coefs[3] = seg;
-coefs[4] = nat;
-*/
-long coefs[5];
-
-/*
 Mutexes y Variables de condición
 */
 
-
+pthread_mutex_t coefs_m = PTHREAD_MUTEX_INITIALIZER;
 
 /*
 Prototipos de funciones
 */
 
+double double_rand();
 
 
 /*
@@ -124,7 +111,43 @@ Funcion h_update()
 -Actualiza las comisiones periodicamente de forma asincrona con el calculo de comisiones.
 */
 
+void h_update(){
 
+    int aleatorio;
+    int valor, i;
+    while(1){
+
+        aleatorio = rand()%3;
+        sleep(aleatorio);
+
+        pthread_mutex_lock(&coefs_m);
+
+        #if DEBUG
+            printf("Funcion h_update\n");
+        #endif
+
+        valor = double_rand();
+
+        #if DEBUG
+            printf("El valor en el vector de coefs es: %f \n", valor);
+        #endif
+
+        for(i=0; i<NUM_COEFS; i++){
+            coefs[i]=valor;
+        }
+
+        pthread_mutex_unlock(&coefs_m);
+    }
+}
+
+/*
+Funcion double_rand()
+-Devuelve un numero aleatorio entre [0,RAND_MAX]
+*/
+
+double double_rand() {
+    return (rand() / (double)RAND_MAX);
+} 
 
 /*
 Programa principal
@@ -134,6 +157,22 @@ int main(){
 
     pthread_t hebras[NUM_THREADS];
     int ret;
+
+    /*
+    Variables compartidas
+    */
+
+    struct cuenta_corriente cc[2];
+    long comis_total = 0;
+
+    /*
+    coefs[0] = hip;
+    coefs[1] = smed;
+    coefs[2] = tarj;
+    coefs[3] = seg;
+    coefs[4] = nat;
+    */
+    long coefs[5];
 
     cc[0].titular = (char *)malloc(sizeof(char));
     strcpy(cc[0].titular,"Lucia Penaranda");
@@ -151,7 +190,7 @@ int main(){
     #endif
 
     /*Inicializacion de los mutexes*/
-    pthread_mutex_init(&, NULL);
+    pthread_mutex_init(&coefs_m, NULL);
 
     #if DEDUG
         printf("Se acaba de inicializar el mutex\n");
