@@ -348,7 +348,7 @@ int main(){
 
     cc[1].titular = (char *)malloc(sizeof(char));
     strcpy(cc[1].titular,"Rafael Leon");
-    cc[1].saldo = 2000;
+    cc[1].saldo = 1000;
     cc[1].hip = 2;
     cc[1].smed = 0;
     cc[1].tarj = 1;
