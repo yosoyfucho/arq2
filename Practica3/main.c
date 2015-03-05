@@ -89,11 +89,10 @@ Mutexes y Variables de condición
 */
 
 pthread_mutex_t coefs_m = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t update_m = PTHREAD_MUTEX_INITIALIZER;
+//pthread_mutex_t update_m = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t coefs_update_cv = PTHREAD_COND_INITIALIZER;
 pthread_cond_t fin_calculo_cv = PTHREAD_COND_INITIALIZER;
 pthread_cond_t cuentas_cv = PTHREAD_COND_INITIALIZER;
-
 
 /*
 Prototipos de funciones
@@ -102,7 +101,8 @@ Prototipos de funciones
 double double_rand();
 void h_update();
 void h_prod();
-
+void h_rentab();
+void h_total();
 
 /*
 Funcion h_prod()
@@ -112,30 +112,39 @@ cuentas[i].comis_prod = 10*coefs[HIP] + 10*coefs[TARJ] + 10*coefs[SEG]
 void h_prod(){
 
 	int i;
+
 	while(1){
+
         #if DEBUG
             printf("Funcion h_prod dentro del while\n");
         #endif
             
-       while((update_gv!=1) && (update_gv!=2))
-        {
-             #if DEBUG
-            printf("Funcion h_prod voy a dormir\n");
-        #endif
-        pthread_cond_wait(&coefs_update_cv, &coefs_m);
-        }        
+       if((update_gv!=1) && (update_gv!=2)){
+
+            #if DEBUG
+                printf("Funcion h_prod voy a dormir\n");
+            #endif
+            pthread_cond_wait(&coefs_update_cv, &coefs_m);
+        }
+
         #if DEBUG
             printf("Funcion h_prod despierto\n");
         #endif
 		pthread_mutex_lock(&coefs_m);
 
-
-
 		for(i=0; i<NUM_CLIENTS; i++){
 			cc[i].comis_prod = 10*coefs[0] + 10*coefs[2] + 10*coefs[3];
 		}
-		pthread_mutex_unlock(&coefs_m);
 
+        update_gv ++;
+
+        if(update_gv<3){
+            pthread_cond_signal(&coefs_update_cv);
+        }else{
+            pthread_cond_signal(&cuentas_cv);
+        }
+
+		pthread_mutex_unlock(&coefs_m);
 	}
 }
 
@@ -148,33 +157,40 @@ cuentas[i].comis_rentab = 10*coefs[SMED] + 10*coefs[NAT]
 void h_rentab(){
 
 	int i;
+
 	while(1){
+
         #if DEBUG
             printf("Funcion h_rentab dentro del while\n");
         #endif
 
-        while((update_gv!=1) && (update_gv!=2))
-        {
-             #if DEBUG
-            printf("Funcion h_rentab voy a dormir\n");
-        #endif
-        pthread_cond_wait(&coefs_update_cv, &coefs_m);
-        }
-        
         pthread_mutex_lock(&coefs_m);
 
-        
+        if((update_gv!=1) && (update_gv!=2))
+        {
+            #if DEBUG
+                printf("Funcion h_rentab voy a dormir\n");
+            #endif
+            pthread_cond_wait(&coefs_update_cv, &coefs_m);
+        }
 
         #if DEBUG
             printf("Funcion h_rentab despierto\n");
         #endif
+
 		for(i=0; i<NUM_CLIENTS; i++){
 			cc[i].comis_rentab = 10*coefs[1] + 10*coefs[4];
 		}
+
         update_gv ++;
+
+        if(update_gv<3){
+            pthread_cond_signal(&coefs_update_cv);
+        }else{
+            pthread_cond_signal(&cuentas_cv);
+        }
         
 		pthread_mutex_unlock(&coefs_m);
-
 	}
 }
 
@@ -187,35 +203,35 @@ cuentas[i].comis_total = cuentas[i].comis_rentab + cuentas[i].comis_prod
 void h_total(){
 
 	int i;
+
 	while(1){
+
         #if DEBUG
             printf("Funcion h_total en while\n");
         #endif
+
 		pthread_mutex_lock(&coefs_m);
-        #if DEBUG
-            printf("h_total> Voy a dormir\n");
-        #endif
-        pthread_mutex_lock(&update_m);
-        while (!(update_gv==3))
-        {
-		  pthread_cond_wait(&coefs_update_cv, &coefs_m);
+
+        if(update_gv!=3){
+            #if DEBUG
+                printf("h_total -> Voy a dormir\n");
+            #endif
+		    pthread_cond_wait(&cuentas_cv, &coefs_m);
         }
+
 		for(i=0; i<NUM_CLIENTS; i++){
 			printf("El valor de la comision rentab es: %ld\n",cc[i].comis_rentab);
 			printf("El valor de la comision prod es: %ld\n",cc[i].comis_prod);
 
-
 			cc[i].comis_total = cc[i].comis_rentab + cc[i].comis_prod;
 
 			printf("El valor de la comision total es: %ld\n",cc[i].comis_total);
-
 		}
-		pthread_mutex_lock(&update_m);
+
 		update_gv = 0;
-		pthread_mutex_unlock(&update_m);
+		
 		pthread_cond_signal(&fin_calculo_cv);
 		pthread_mutex_unlock(&coefs_m);
-
 	}
 }
 
@@ -232,54 +248,51 @@ void h_update(){
     int i;
     double valor;
 
+    #if DEBUG
+        printf("Funcion h_update 1a vez\n");
+    #endif
 
+    pthread_mutex_lock(&coefs_m);
+    valor = double_rand();
 
-        #if DEBUG
-            printf("Funcion h_update 1a vez\n");
-        #endif
+    #if DEBUG      
+        printf("El valor en el vector de coefs es: %f \n", valor);
+    #endif
 
-        pthread_mutex_lock(&coefs_m);
-        valor = double_rand();
+    for(i=0; i<NUM_COEFS; i++){
+        coefs[i]=valor;
+    }
 
-        #if DEBUG
-            printf("El valor en el vector de coefs es: %f \n", valor);
-        #endif
+    update_gv++;
 
-        for(i=0; i<NUM_COEFS; i++){
-            coefs[i]=valor;
-        }
+    #if DEBUG
+        printf("El valor de update dentro es : %d \n", update_gv);
+    #endif
 
+    pthread_cond_signal(&coefs_update_cv);
 
-            update_gv++;
-            #if DEBUG
-            printf("El valor de update dentro es : %d \n", update_gv);
-            #endif
+    #if DEBUG
+        printf("h_update-> he mandado el signal\n");
+    #endif
 
-        pthread_cond_signal(&coefs_update_cv);
-        #if DEBUG
-            printf("h_update-> he mandado el signal\n");
-        #endif
+    pthread_mutex_unlock(&coefs_m);
 
-        pthread_mutex_unlock(&coefs_m);
-        #if DEBUG
-            printf("h_update-> desbloqueo coefs_m\n");
-        #endif
-
+    #if DEBUG
+        printf("h_update-> desbloqueo coefs_m\n");
+    #endif
 
     while(1){
 
-    	
-    	while(!(update_gv==0))
-    	{
-            printf("h_update se va a dormir\n");
-    		pthread_cond_wait(&fin_calculo_cv,&coefs_m);
-    	}
-    	
         aleatorio = rand()%3;
         sleep(aleatorio);
 
         pthread_mutex_lock(&coefs_m);
 
+    	if(update_gv!=0){
+            printf("h_update se va a dormir\n");
+    		pthread_cond_wait(&fin_calculo_cv,&coefs_m);
+    	}
+    	
         #if DEBUG
             printf("Funcion h_update dentro del while\n");
         #endif
@@ -293,9 +306,9 @@ void h_update(){
         for(i=0; i<NUM_COEFS; i++){
             coefs[i]=valor;
         }
-        pthread_mutex_lock(&update_m);
-        	update_gv++;
-        pthread_mutex_unlock(&update_m);
+        
+        update_gv++;
+
         pthread_cond_signal(&coefs_update_cv);
         pthread_mutex_unlock(&coefs_m);
     }
