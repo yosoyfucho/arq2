@@ -75,6 +75,7 @@ struct cuenta_corriente
 Variables compartidas
 */
 
+int update_gv = 0;
 struct cuenta_corriente cc[NUM_CLIENTS];
 long coefs[5];
 int update_gv; //0 no hay update 1 hay update
@@ -89,7 +90,6 @@ Mutexes y Variables de condición
 */
 
 pthread_mutex_t coefs_m = PTHREAD_MUTEX_INITIALIZER;
-//pthread_mutex_t update_m = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t coefs_update_cv = PTHREAD_COND_INITIALIZER;
 pthread_cond_t fin_calculo_cv = PTHREAD_COND_INITIALIZER;
 pthread_cond_t cuentas_cv = PTHREAD_COND_INITIALIZER;
@@ -330,7 +330,6 @@ Programa principal
 int main(){
 
 	srand(time(NULL));
-	update_gv = 0;
     pthread_t hebras_t[NUM_THREADS];
     int ret,i;
 
@@ -385,7 +384,6 @@ int main(){
 
     /*Inicializacion de los mutexes*/
     pthread_mutex_init(&coefs_m, NULL);
-    //pthread_mutex_init(&update_m, NULL);
     pthread_cond_init(&coefs_update_cv, NULL);
     pthread_cond_init(&cuentas_cv, NULL);
     pthread_cond_init(&fin_calculo_cv, NULL);
