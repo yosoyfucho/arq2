@@ -118,20 +118,19 @@ void h_prod(){
         #if DEBUG
             printf("Funcion h_prod dentro del while\n");
         #endif
-            
-       while(update_gv!=2){
+        
+        pthread_mutex_lock(&coefs_m);    
+        while(update_gv!=2){
 
             #if DEBUG
                 printf("Funcion h_prod voy a dormir\n");
                 printf("\n");
             #endif
             pthread_cond_wait(&coefs_update_cv, &coefs_m);
+             #if DEBUG
+                printf("Funcion h_prod despierto\n");
+            #endif
         }
-
-        #if DEBUG
-            printf("Funcion h_prod despierto\n");
-        #endif
-		pthread_mutex_lock(&coefs_m);
 
 		for(i=0; i<NUM_CLIENTS; i++){
 			cc[i].comis_prod = 10*coefs[0] + 10*coefs[2] + 10*coefs[3];
@@ -142,11 +141,15 @@ void h_prod(){
 
         update_gv ++;
 
-        if(update_gv<3){
-            pthread_cond_signal(&coefs_update_cv);
-        }else{
+        #if DEBUG
+            printf("El valor de update_gv es : %d \n", update_gv);
+        #endif
+
+      //  if(update_gv<3){
+        //    pthread_cond_signal(&coefs_update_cv);
+        //}else{
             pthread_cond_signal(&cuentas_cv);
-        }
+        //}
 
 		pthread_mutex_unlock(&coefs_m);
 	}
@@ -176,11 +179,11 @@ void h_rentab(){
                 printf("\n");
             #endif
             pthread_cond_wait(&coefs_update_cv, &coefs_m);
-        }
 
-        #if DEBUG
-            printf("Funcion h_rentab despierto\n");
-        #endif
+            #if DEBUG
+                printf("Funcion h_rentab despierto\n");
+            #endif
+        }
 
 		for(i=0; i<NUM_CLIENTS; i++){
 			cc[i].comis_rentab = 10*coefs[1] + 10*coefs[4];
@@ -191,13 +194,20 @@ void h_rentab(){
 
         update_gv ++;
 
-        if(update_gv<3){
+        #if DEBUG
+            printf("El valor de update_gv es : %d \n", update_gv);
+        #endif
+
+        //if(update_gv<3){
             pthread_cond_signal(&coefs_update_cv);
-        }else{
-            pthread_cond_signal(&cuentas_cv);
-        }
+        //}else{
+          //  pthread_cond_signal(&cuentas_cv);
+        //}
         
 		pthread_mutex_unlock(&coefs_m);
+        #if DEBUG
+            printf("h_rentab ->Se supone que vuelvo al principio del while(1)\n");
+        #endif
 	}
 }
 
@@ -238,6 +248,10 @@ void h_total(){
 		}
 
 		update_gv = 0;
+
+        #if DEBUG
+            printf("El valor de update_gv es : %d \n", update_gv);
+        #endif
 		
 		pthread_cond_signal(&fin_calculo_cv);
 		pthread_mutex_unlock(&coefs_m);
@@ -294,7 +308,7 @@ void h_update(){
 
         pthread_mutex_lock(&coefs_m);
 
-    	if(update_gv!=0){
+    	while(update_gv!=0){
             printf("h_update se va a dormir\n");
             printf("\n");
     		pthread_cond_wait(&fin_calculo_cv,&coefs_m);
@@ -315,6 +329,10 @@ void h_update(){
         }
         
         update_gv++;
+
+        #if DEBUG
+            printf("El valor de update_gv es : %d \n", update_gv);
+        #endif
 
         pthread_cond_signal(&coefs_update_cv);
         pthread_mutex_unlock(&coefs_m);
@@ -343,11 +361,11 @@ int main(){
     cc[0].titular = (char *)malloc(sizeof(char));
     strcpy(cc[0].titular,"Lucia Penaranda");
     cc[0].saldo = 1000;
-    cc[0].hip = 0;
+    cc[0].hip = 1;
     cc[0].smed = 1;
-    cc[0].tarj = 2;
-    cc[0].seg = 0;
-    cc[0].nat = 0;
+    cc[0].tarj = 1;
+    cc[0].seg = 1;
+    cc[0].nat = 1;
     cc[0].comis_rentab = 0;
     cc[0].comis_prod = 0;
     cc[0].comis_total = 0;
@@ -357,10 +375,10 @@ int main(){
     strcpy(cc[1].titular,"Rafael Leon");
     cc[1].saldo = 1000;
     cc[1].hip = 2;
-    cc[1].smed = 0;
-    cc[1].tarj = 1;
-    cc[1].seg = 1;
-    cc[1].nat = 1;
+    cc[1].smed = 2;
+    cc[1].tarj = 2;
+    cc[1].seg = 2;
+    cc[1].nat = 2;
     cc[1].comis_rentab = 0;
     cc[1].comis_prod = 0;
     cc[1].comis_total = 0;
