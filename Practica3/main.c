@@ -77,7 +77,7 @@ Variables compartidas
 
 int update_gv = 0;
 struct cuenta_corriente cc[NUM_CLIENTS];
-long coefs[5];
+float coefs[5];
 int update_gv; //0 no hay update 1 hay update
 				/*coefs[0] = hip;
                 coefs[1] = smed;
@@ -134,6 +134,9 @@ void h_prod(){
 
 		for(i=0; i<NUM_CLIENTS; i++){
 			cc[i].comis_prod = 10*coefs[0] + 10*coefs[2] + 10*coefs[3];
+            #if DEBUG
+                printf("h_prod -> El valor de la comision prod de %s es: %f\n", cc[i].titular, cc[i].comis_prod);
+            #endif
 		}
 
         update_gv ++;
@@ -180,6 +183,9 @@ void h_rentab(){
 
 		for(i=0; i<NUM_CLIENTS; i++){
 			cc[i].comis_rentab = 10*coefs[1] + 10*coefs[4];
+            #if DEBUG
+                printf("h_rentab -> El valor de la comision rentab de %s es: %f\n", cc[i].titular, cc[i].comis_rentab);
+            #endif
 		}
 
         update_gv ++;
