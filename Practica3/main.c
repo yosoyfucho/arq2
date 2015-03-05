@@ -66,9 +66,9 @@ struct cuenta_corriente
     enum tarjeta tarj;
     enum seguros seg;
     enum naturaleza nat;
-    long comis_prod;
-    long comis_rentab;
-    long comis_total;
+    float comis_prod;
+    float comis_rentab;
+    float comis_total;
 };
 
 /*
@@ -220,12 +220,12 @@ void h_total(){
         }
 
 		for(i=0; i<NUM_CLIENTS; i++){
-			printf("El valor de la comision rentab es: %ld\n",cc[i].comis_rentab);
-			printf("El valor de la comision prod es: %ld\n",cc[i].comis_prod);
+			printf("El valor de la comision rentab es: %f\n",cc[i].comis_rentab);
+			printf("El valor de la comision prod es: %f\n",cc[i].comis_prod);
 
 			cc[i].comis_total = cc[i].comis_rentab + cc[i].comis_prod;
 
-			printf("El valor de la comision total es: %ld\n",cc[i].comis_total);
+			printf("El valor de la comision total es: %f\n",cc[i].comis_total);
 		}
 
 		update_gv = 0;
@@ -333,9 +333,6 @@ int main(){
     pthread_t hebras_t[NUM_THREADS];
     int ret,i;
 
-    long prueba = 10*0,024;
-    printf("prueba = %ld \n");
-
     cc[0].titular = (char *)malloc(sizeof(char));
     strcpy(cc[0].titular,"Lucia Penaranda");
     cc[0].saldo = 1000;
@@ -369,9 +366,9 @@ int main(){
         printf("cc[0].tarj Lucia = %d\n", cc[0].tarj);
         printf("cc[0].seg Lucia = %d\n", cc[0].seg);
         printf("cc[0].nat Lucia = %d\n", cc[0].nat);
-        printf("cc[0].comis_rentab Lucia = %ld\n", cc[0].comis_rentab);
-        printf("cc[0].comis_prod Lucia = %ld\n", cc[0].comis_prod);
-        printf("cc[0].comis_total Lucia = %ld\n", cc[0].comis_total);
+        printf("cc[0].comis_rentab Lucia = %f\n", cc[0].comis_rentab);
+        printf("cc[0].comis_prod Lucia = %f\n", cc[0].comis_prod);
+        printf("cc[0].comis_total Lucia = %f\n", cc[0].comis_total);
         printf("\n");
         printf("cc[1].titular = %s\n",cc[1].titular);
         printf("cc[1].saldo Rafa = %ld\n", cc[1].saldo);
@@ -380,9 +377,9 @@ int main(){
         printf("cc[1].tarj Rafa = %d\n", cc[1].tarj);
         printf("cc[1].seg Rafa = %d\n", cc[1].seg);
         printf("cc[1].nat Rafa = %d\n", cc[1].nat);
-        printf("cc[1].comis_rentab Rafa = %ld\n", cc[1].comis_rentab);
-        printf("cc[1].comis_prod Rafa = %ld\n", cc[1].comis_prod);
-        printf("cc[1].comis_total Rafa = %ld\n", cc[1].comis_total);
+        printf("cc[1].comis_rentab Rafa = %f\n", cc[1].comis_rentab);
+        printf("cc[1].comis_prod Rafa = %f\n", cc[1].comis_prod);
+        printf("cc[1].comis_total Rafa = %f\n", cc[1].comis_total);
     #endif
 
     /*Inicializacion de los mutexes*/
