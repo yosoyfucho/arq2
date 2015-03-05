@@ -116,15 +116,20 @@ void h_prod(){
         #if DEBUG
             printf("Funcion h_prod dentro del while\n");
         #endif
-		pthread_mutex_lock(&coefs_m);
-
-        #if DEBUG
+            
+       while((update_gv!=1) && (update_gv!=2))
+        {
+             #if DEBUG
             printf("Funcion h_prod voy a dormir\n");
         #endif
-		pthread_cond_wait(&coefs_update_cv, &coefs_m);
+        pthread_cond_wait(&coefs_update_cv, &coefs_m);
+        }        
         #if DEBUG
             printf("Funcion h_prod despierto\n");
         #endif
+		pthread_mutex_lock(&coefs_m);
+
+
 
 		for(i=0; i<NUM_CLIENTS; i++){
 			cc[i].comis_prod = 10*coefs[0] + 10*coefs[2] + 10*coefs[3];
@@ -147,15 +152,19 @@ void h_rentab(){
         #if DEBUG
             printf("Funcion h_rentab dentro del while\n");
         #endif
-        pthread_mutex_lock(&coefs_m);
-        #if DEBUG
+
+        while((update_gv!=1) && (update_gv!=2))
+        {
+             #if DEBUG
             printf("Funcion h_rentab voy a dormir\n");
         #endif
-        pthread_mutex_lock(&update_m);
-        while(!(update_gv==1 || update_gv==2))
-        {
-		pthread_cond_wait(&coefs_update_cv, &coefs_m);
+        pthread_cond_wait(&coefs_update_cv, &coefs_m);
         }
+        
+        pthread_mutex_lock(&coefs_m);
+
+        
+
         #if DEBUG
             printf("Funcion h_rentab despierto\n");
         #endif
@@ -163,7 +172,7 @@ void h_rentab(){
 			cc[i].comis_rentab = 10*coefs[1] + 10*coefs[4];
 		}
         update_gv ++;
-        pthread_mutex_unlock(&update_m);
+        
 		pthread_mutex_unlock(&coefs_m);
 
 	}
@@ -186,8 +195,11 @@ void h_total(){
         #if DEBUG
             printf("h_total> Voy a dormir\n");
         #endif
-		pthread_cond_wait(&coefs_update_cv, &coefs_m);
-
+        pthread_mutex_lock(&update_m);
+        while (!(update_gv==3))
+        {
+		  pthread_cond_wait(&coefs_update_cv, &coefs_m);
+        }
 		for(i=0; i<NUM_CLIENTS; i++){
 			printf("El valor de la comision rentab es: %ld\n",cc[i].comis_rentab);
 			printf("El valor de la comision prod es: %ld\n",cc[i].comis_prod);
@@ -220,12 +232,13 @@ void h_update(){
     int i;
     double valor;
 
-    pthread_mutex_lock(&coefs_m);
+
 
         #if DEBUG
             printf("Funcion h_update 1a vez\n");
         #endif
 
+        pthread_mutex_lock(&coefs_m);
         valor = double_rand();
 
         #if DEBUG
@@ -235,21 +248,33 @@ void h_update(){
         for(i=0; i<NUM_COEFS; i++){
             coefs[i]=valor;
         }
-        pthread_mutex_lock(&update_m);
-        	update_gv++;
-        pthread_mutex_unlock(&update_m);
+
+
+            update_gv++;
+            #if DEBUG
+            printf("El valor de update dentro es : %d \n", update_gv);
+            #endif
 
         pthread_cond_signal(&coefs_update_cv);
+        #if DEBUG
+            printf("h_update-> he mandado el signal\n");
+        #endif
+
         pthread_mutex_unlock(&coefs_m);
+        #if DEBUG
+            printf("h_update-> desbloqueo coefs_m\n");
+        #endif
+
 
     while(1){
 
-    	pthread_mutex_lock(&update_m);
+    	
     	while(!(update_gv==0))
     	{
+            printf("h_update se va a dormir\n");
     		pthread_cond_wait(&fin_calculo_cv,&coefs_m);
     	}
-    	pthread_mutex_unlock(&update_m);
+    	
         aleatorio = rand()%3;
         sleep(aleatorio);
 
