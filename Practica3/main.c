@@ -333,6 +333,9 @@ int main(){
     pthread_t hebras_t[NUM_THREADS];
     int ret,i;
 
+    long prueba = 10*0,024;
+    printf("prueba = %ld \n");
+
     cc[0].titular = (char *)malloc(sizeof(char));
     strcpy(cc[0].titular,"Lucia Penaranda");
     cc[0].saldo = 1000;
