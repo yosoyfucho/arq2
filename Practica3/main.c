@@ -12,6 +12,7 @@ Constantes
 #define NUM_THREADS 4
 #define RAND_MAX 1
 #define NUM_COEFS 5
+#define NUM_CLIENTS 2
 
 /*
 Bibliotecas
@@ -67,15 +68,17 @@ struct cuenta_corriente
     enum naturaleza nat;
     long comis_prod;
     long comis_rentab;
+    long comis_total;
 };
 
 /*
 Variables compartidas
 */
 
-struct cuenta_corriente cc[2];
-long comis_total = 0;
-long coefs[5]; /*coefs[0] = hip;
+struct cuenta_corriente cc[NUM_CLIENTS];
+long coefs[5]; 
+int update_gv; //0 no hay update 1 hay update
+				/*coefs[0] = hip;
                 coefs[1] = smed;
                 coefs[2] = tarj;
                 coefs[3] = seg;
@@ -86,7 +89,9 @@ Mutexes y Variables de condición
 */
 
 pthread_mutex_t coefs_m = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t update_m = PTHREAD_MUTEX_INITIALIZER;
 pthread_cond_t coefs_update_cv = PTHREAD_COND_INITIALIZER;
+pthread_cond_t fin_calculo_cv = PTHREAD_COND_INITIALIZER;
 pthread_cond_t cuentas_cv = PTHREAD_COND_INITIALIZER;
 
 
@@ -96,6 +101,7 @@ Prototipos de funciones
 
 double double_rand();
 void h_update();
+void h_prod();
 
 
 /*
@@ -103,7 +109,20 @@ Funcion h_prod()
 -Calcula comisiones por el concepto de productos contratados: hipoteca, tarjeta y seguros.
 cuentas[i].comis_prod = 10*coefs[HIP] + 10*coefs[TARJ] + 10*coefs[SEG]
 */
+void h_prod(){
 
+	int i;
+	while(1){
+		pthread_mutex_lock(&coefs_m);
+		pthread_cond_wait(&coefs_update_cv, &coefs_m);
+
+		for(i=0; i<NUM_CLIENTS; i++){
+			cc[i].comis_prod = 10*coefs[0] + 10*coefs[2] + 10*coefs[3];
+		}
+		pthread_mutex_unlock(&coefs_m);
+
+	}
+}
 
 
 /*
@@ -111,7 +130,20 @@ Funcion h_rentab()
 -Calcula comisiones por conceptos de saldo medio y tipo de cliente.
 cuentas[i].comis_rentab = 10*coefs[SMED] + 10*coefs[NAT]
 */
+void h_rentab(){
 
+	int i;
+	while(1){
+		pthread_mutex_lock(&coefs_m);
+		pthread_cond_wait(&coefs_update_cv, &coefs_m);
+
+		for(i=0; i<NUM_CLIENTS; i++){
+			cc[i].comis_rentab = 10*coefs[1] + 10*coefs[4];
+		}
+		pthread_mutex_unlock(&coefs_m);
+
+	}
+}
 
 
 /*
@@ -119,6 +151,31 @@ Funcion h_total()
 -Calcula la comision total cuando terminan h_prod y h_rentab.
 cuentas[i].comis_total = cuentas[i].comis_rentab + cuentas[i].comis_prod
 */
+void h_total(){
+	
+	int i;
+	while(1){
+		pthread_mutex_lock(&coefs_m);
+		pthread_cond_wait(&coefs_update_cv, &coefs_m);
+
+		for(i=0; i<NUM_CLIENTS; i++){
+			printf("El valor de la comision rentab es: %ld\n",cc[i].comis_rentab);
+			printf("El valor de la comision prod es: %ld\n",cc[i].comis_prod);
+
+
+			cc[i].comis_total = cc[i].comis_rentab + cc[i].comis_prod;
+
+			printf("El valor de la comision total es: %ld\n",cc[i].comis_total);
+
+		}
+		pthread_mutex_lock(&update_m);
+		update_gv = 0;
+		pthread_mutex_unlock(&update_m);
+		pthread_cond_signal(&fin_calculo_cv);
+		pthread_mutex_unlock(&coefs_m);
+
+	}
+}
 
 
 
@@ -131,8 +188,38 @@ void h_update(){
 
     int aleatorio;
     int valor, i;
+
+    pthread_mutex_lock(&coefs_m);
+
+        #if DEBUG
+            printf("Funcion h_update\n");
+        #endif
+
+        valor = double_rand();
+
+        #if DEBUG
+            printf("El valor en el vector de coefs es: %f \n", valor);
+        #endif
+
+        for(i=0; i<NUM_COEFS; i++){
+            coefs[i]=valor;
+        }
+        pthread_mutex_lock(&update_m);
+        	update_gv = 1;
+        ptrehad_mutex_unlock(&update_m);
+
+        pthread_cond_signal(&coefs_update_cv);
+        pthread_mutex_unlock(&coefs_m);
+
+
     while(1){
 
+    	pthread_mutex_lock(&update_m);
+    	while(!update_gv)
+    	{
+    		pthread_cond_wait(&fin_calculo_cv,&coefs_m);
+    	}
+    	pthread_mutex_unlock(&update_m);
         aleatorio = rand()%3;
         sleep(aleatorio);
 
@@ -151,7 +238,9 @@ void h_update(){
         for(i=0; i<NUM_COEFS; i++){
             coefs[i]=valor;
         }
-
+        pthread_mutex_lock(&update_m);
+        	update_gv = 1;
+        ptrehad_mutex_unlock(&update_m);
         pthread_cond_signal(&coefs_update_cv);
         pthread_mutex_unlock(&coefs_m);
     }
@@ -172,6 +261,8 @@ Programa principal
 
 int main(){
 
+	srand(time(NULL));
+	update_gv = 0;
     pthread_t hebras_t[NUM_THREADS];
     int ret;
 
@@ -183,6 +274,9 @@ int main(){
     cc[0].tarj = 2;
     cc[0].seg = 0;
     cc[0].nat = 0;
+    cc[0].comis_rentab = 0;
+    cc[0].comis_prod = 0;
+    cc[0].comis_total = 0;
 
 
     cc[1].titular = (char *)malloc(sizeof(char));
@@ -193,6 +287,9 @@ int main(){
     cc[1].tarj = 1;
     cc[1].seg = 1;
     cc[1].nat = 1;
+    cc[1].comis_rentab = 0;
+    cc[1].comis_prod = 0;
+    cc[1].comis_total = 0;
 
     #if DEBUG
         printf("cc[0].titular = %s\n",cc[0].titular);
@@ -202,6 +299,9 @@ int main(){
         printf("cc[0].tarj Lucia = %d\n", cc[0].tarj);
         printf("cc[0].seg Lucia = %d\n", cc[0].seg);
         printf("cc[0].nat Lucia = %d\n", cc[0].nat);
+        printf("cc[0].comis_rentab Lucia = %ld\n", cc[0].comis_rentab);
+        printf("cc[0].comis_prod Lucia = %ld\n", cc[0].comis_prod);
+        printf("cc[0].comis_total Lucia = %ld\n", cc[0].comis_total);
         printf("\n");
         printf("cc[1].titular = %s\n",cc[1].titular);
         printf("cc[1].saldo Rafa = %ld\n", cc[1].saldo);
@@ -210,12 +310,18 @@ int main(){
         printf("cc[1].tarj Rafa = %d\n", cc[0].tarj);
         printf("cc[1].seg Rafa = %d\n", cc[0].seg);
         printf("cc[1].nat Rafa = %d\n", cc[0].nat);
+        printf("cc[1].comis_rentab Rafa = %ld\n", cc[0].comis_rentab);
+        printf("cc[1].comis_prod Rafa = %ld\n", cc[0].comis_prod);
+        printf("cc[1].comis_total Rafa = %ld\n", cc[0].comis_total);
     #endif
 
     /*Inicializacion de los mutexes*/
     pthread_mutex_init(&coefs_m, NULL);
+    pthread_mutex_init(&update_m, NULL);
     pthread_cond_init(&coefs_update_cv, NULL);
     pthread_cond_init(&cuentas_cv, NULL);
+    pthread_cond_init(&fin_calculo_cv, NULL);
+
 
     #if DEDUG
         printf("Se acaba de inicializar el mutex\n");
