@@ -119,10 +119,11 @@ void h_prod(){
             printf("Funcion h_prod dentro del while\n");
         #endif
             
-       if((update_gv!=1) && (update_gv!=2)){
+       while(update_gv!=2){
 
             #if DEBUG
                 printf("Funcion h_prod voy a dormir\n");
+                printf("\n");
             #endif
             pthread_cond_wait(&coefs_update_cv, &coefs_m);
         }
@@ -169,10 +170,10 @@ void h_rentab(){
 
         pthread_mutex_lock(&coefs_m);
 
-        if((update_gv!=1) && (update_gv!=2))
-        {
+        while(update_gv!=1){
             #if DEBUG
                 printf("Funcion h_rentab voy a dormir\n");
+                printf("\n");
             #endif
             pthread_cond_wait(&coefs_update_cv, &coefs_m);
         }
@@ -218,9 +219,10 @@ void h_total(){
 
 		pthread_mutex_lock(&coefs_m);
 
-        if(update_gv!=3){
+        while(update_gv!=3){
             #if DEBUG
                 printf("h_total -> Voy a dormir\n");
+                printf("\n");
             #endif
 		    pthread_cond_wait(&cuentas_cv, &coefs_m);
         }
@@ -232,6 +234,7 @@ void h_total(){
 			cc[i].comis_total = cc[i].comis_rentab + cc[i].comis_prod;
 
 			printf("El valor de la comision total es: %f\n",cc[i].comis_total);
+            printf("\n");
 		}
 
 		update_gv = 0;
@@ -272,20 +275,17 @@ void h_update(){
     update_gv++;
 
     #if DEBUG
-        printf("El valor de update dentro es : %d \n", update_gv);
+        printf("El valor de update_gv es : %d \n", update_gv);
     #endif
 
     pthread_cond_signal(&coefs_update_cv);
 
     #if DEBUG
         printf("h_update-> he mandado el signal\n");
+        printf("h_update-> desbloqueo coefs_m\n");
     #endif
 
     pthread_mutex_unlock(&coefs_m);
-
-    #if DEBUG
-        printf("h_update-> desbloqueo coefs_m\n");
-    #endif
 
     while(1){
 
@@ -296,6 +296,7 @@ void h_update(){
 
     	if(update_gv!=0){
             printf("h_update se va a dormir\n");
+            printf("\n");
     		pthread_cond_wait(&fin_calculo_cv,&coefs_m);
     	}
     	
@@ -386,6 +387,7 @@ int main(){
         printf("cc[1].comis_rentab Rafa = %f\n", cc[1].comis_rentab);
         printf("cc[1].comis_prod Rafa = %f\n", cc[1].comis_prod);
         printf("cc[1].comis_total Rafa = %f\n", cc[1].comis_total);
+        printf("\n");
     #endif
 
     /*Inicializacion de los mutexes*/
