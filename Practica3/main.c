@@ -41,7 +41,7 @@ enum saldo_medio{
     mayor_mil
 };
 enum tarjeta{
-    no_tiene,
+    sin_tarjeta,
     debito,
     debito_y_credito
 };
@@ -57,12 +57,12 @@ enum naturaleza{
 };
 
 
-struct cuenta_corriente 
+struct cuenta_corriente
 {
     char * titular;
     long saldo;
     enum hipoteca hip;
-    enum saldoMedio smed;
+    enum saldo_medio smed;
     enum tarjeta tarj;
     enum seguros seg;
     enum naturaleza nat;
@@ -76,7 +76,7 @@ Variables compartidas
 */
 
 struct cuenta_corriente cc[NUM_CLIENTS];
-long coefs[5]; 
+long coefs[5];
 int update_gv; //0 no hay update 1 hay update
 				/*coefs[0] = hip;
                 coefs[1] = smed;
@@ -113,8 +113,18 @@ void h_prod(){
 
 	int i;
 	while(1){
+        #if DEBUG
+            printf("Funcion h_prod dentro del while\n");
+        #endif
 		pthread_mutex_lock(&coefs_m);
+
+        #if DEBUG
+            printf("Funcion h_prod voy a dormir\n");
+        #endif
 		pthread_cond_wait(&coefs_update_cv, &coefs_m);
+        #if DEBUG
+            printf("Funcion h_prod despierto\n");
+        #endif
 
 		for(i=0; i<NUM_CLIENTS; i++){
 			cc[i].comis_prod = 10*coefs[0] + 10*coefs[2] + 10*coefs[3];
@@ -134,12 +144,26 @@ void h_rentab(){
 
 	int i;
 	while(1){
-		pthread_mutex_lock(&coefs_m);
+        #if DEBUG
+            printf("Funcion h_rentab dentro del while\n");
+        #endif
+        pthread_mutex_lock(&coefs_m);
+        #if DEBUG
+            printf("Funcion h_rentab voy a dormir\n");
+        #endif
+        pthread_mutex_lock(&update_m);
+        while(!(update_gv==1 || update_gv==2))
+        {
 		pthread_cond_wait(&coefs_update_cv, &coefs_m);
-
+        }
+        #if DEBUG
+            printf("Funcion h_rentab despierto\n");
+        #endif
 		for(i=0; i<NUM_CLIENTS; i++){
 			cc[i].comis_rentab = 10*coefs[1] + 10*coefs[4];
 		}
+        update_gv ++;
+        pthread_mutex_unlock(&update_m);
 		pthread_mutex_unlock(&coefs_m);
 
 	}
@@ -152,10 +176,16 @@ Funcion h_total()
 cuentas[i].comis_total = cuentas[i].comis_rentab + cuentas[i].comis_prod
 */
 void h_total(){
-	
+
 	int i;
 	while(1){
+        #if DEBUG
+            printf("Funcion h_total en while\n");
+        #endif
 		pthread_mutex_lock(&coefs_m);
+        #if DEBUG
+            printf("h_total> Voy a dormir\n");
+        #endif
 		pthread_cond_wait(&coefs_update_cv, &coefs_m);
 
 		for(i=0; i<NUM_CLIENTS; i++){
@@ -187,12 +217,13 @@ Funcion h_update()
 void h_update(){
 
     int aleatorio;
-    int valor, i;
+    int i;
+    double valor;
 
     pthread_mutex_lock(&coefs_m);
 
         #if DEBUG
-            printf("Funcion h_update\n");
+            printf("Funcion h_update 1a vez\n");
         #endif
 
         valor = double_rand();
@@ -205,17 +236,16 @@ void h_update(){
             coefs[i]=valor;
         }
         pthread_mutex_lock(&update_m);
-        	update_gv = 1;
-        ptrehad_mutex_unlock(&update_m);
+        	update_gv++;
+        pthread_mutex_unlock(&update_m);
 
         pthread_cond_signal(&coefs_update_cv);
         pthread_mutex_unlock(&coefs_m);
 
-
     while(1){
 
     	pthread_mutex_lock(&update_m);
-    	while(!update_gv)
+    	while(!(update_gv==0))
     	{
     		pthread_cond_wait(&fin_calculo_cv,&coefs_m);
     	}
@@ -226,7 +256,7 @@ void h_update(){
         pthread_mutex_lock(&coefs_m);
 
         #if DEBUG
-            printf("Funcion h_update\n");
+            printf("Funcion h_update dentro del while\n");
         #endif
 
         valor = double_rand();
@@ -239,8 +269,8 @@ void h_update(){
             coefs[i]=valor;
         }
         pthread_mutex_lock(&update_m);
-        	update_gv = 1;
-        ptrehad_mutex_unlock(&update_m);
+        	update_gv++;
+        pthread_mutex_unlock(&update_m);
         pthread_cond_signal(&coefs_update_cv);
         pthread_mutex_unlock(&coefs_m);
     }
@@ -253,7 +283,7 @@ Funcion double_rand()
 
 double double_rand() {
     return (rand() / (double)RAND_MAX);
-} 
+}
 
 /*
 Programa principal
@@ -264,7 +294,7 @@ int main(){
 	srand(time(NULL));
 	update_gv = 0;
     pthread_t hebras_t[NUM_THREADS];
-    int ret;
+    int ret,i;
 
     cc[0].titular = (char *)malloc(sizeof(char));
     strcpy(cc[0].titular,"Lucia Penaranda");
@@ -281,7 +311,7 @@ int main(){
 
     cc[1].titular = (char *)malloc(sizeof(char));
     strcpy(cc[1].titular,"Rafael Leon");
-    cc[1].saldo = 1000;
+    cc[1].saldo = 2000;
     cc[1].hip = 2;
     cc[1].smed = 0;
     cc[1].tarj = 1;
@@ -305,14 +335,14 @@ int main(){
         printf("\n");
         printf("cc[1].titular = %s\n",cc[1].titular);
         printf("cc[1].saldo Rafa = %ld\n", cc[1].saldo);
-        printf("cc[1].hip Rafa = %d\n", cc[0].hip);
-        printf("cc[1].smed Rafa = %d\n", cc[0].smed);
-        printf("cc[1].tarj Rafa = %d\n", cc[0].tarj);
-        printf("cc[1].seg Rafa = %d\n", cc[0].seg);
-        printf("cc[1].nat Rafa = %d\n", cc[0].nat);
-        printf("cc[1].comis_rentab Rafa = %ld\n", cc[0].comis_rentab);
-        printf("cc[1].comis_prod Rafa = %ld\n", cc[0].comis_prod);
-        printf("cc[1].comis_total Rafa = %ld\n", cc[0].comis_total);
+        printf("cc[1].hip Rafa = %d\n", cc[1].hip);
+        printf("cc[1].smed Rafa = %d\n", cc[1].smed);
+        printf("cc[1].tarj Rafa = %d\n", cc[1].tarj);
+        printf("cc[1].seg Rafa = %d\n", cc[1].seg);
+        printf("cc[1].nat Rafa = %d\n", cc[1].nat);
+        printf("cc[1].comis_rentab Rafa = %ld\n", cc[1].comis_rentab);
+        printf("cc[1].comis_prod Rafa = %ld\n", cc[1].comis_prod);
+        printf("cc[1].comis_total Rafa = %ld\n", cc[1].comis_total);
     #endif
 
     /*Inicializacion de los mutexes*/
@@ -333,24 +363,23 @@ int main(){
     if(ret){
         printf("ERROR en pthread_create\n");
         pthread_exit(NULL);
-    }   
+    }
     ret = pthread_create(&hebras_t[1], NULL, (void *)h_prod, NULL);
     if(ret){
         printf("ERROR en pthread_create\n");
         pthread_exit(NULL);
-    } 
+    }
     ret = pthread_create(&hebras_t[2], NULL, (void *)h_rentab, NULL);
     if(ret){
         printf("ERROR en pthread_create\n");
         pthread_exit(NULL);
-    } 
+    }
     ret = pthread_create(&hebras_t[3], NULL, (void *)h_total, NULL);
     if(ret){
         printf("ERROR en pthread_create\n");
         pthread_exit(NULL);
-    } 
-    
-    
+    }
+
     for(i=0;i<NUM_THREADS;i++){
 
         ret = pthread_join(hebras_t[i], NULL);
@@ -362,7 +391,7 @@ int main(){
         if(ret){
             printf("ERROR en pthread_join\n");
             pthread_exit(NULL);
-        }   
+        }
     }
 
     free(cc[0].titular);
