@@ -385,7 +385,7 @@ int main(){
 
     /*Inicializacion de los mutexes*/
     pthread_mutex_init(&coefs_m, NULL);
-    pthread_mutex_init(&update_m, NULL);
+    //pthread_mutex_init(&update_m, NULL);
     pthread_cond_init(&coefs_update_cv, NULL);
     pthread_cond_init(&cuentas_cv, NULL);
     pthread_cond_init(&fin_calculo_cv, NULL);
