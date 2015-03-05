@@ -1,0 +1,67 @@
+monitor01:~/ARQUI2_2015/P3> gcc -pthread -Wall -DDEBUG -g -o main main.c
+monitor01:~/ARQUI2_2015/P3> ./main
+cc[0].titular = Lucia Penara
+cc[0].saldo Lucia = 1000
+cc[0].hip Lucia = 1
+cc[0].smed Lucia = 1
+cc[0].tarj Lucia = 1
+cc[0].seg Lucia = 1
+cc[0].nat Lucia = 1
+cc[0].comis_rentab Lucia = 0.000000
+cc[0].comis_prod Lucia = 0.000000
+cc[0].comis_total Lucia = 0.000000
+
+cc[1].titular = Rafael Leon
+cc[1].saldo Rafa = 1000
+cc[1].hip Rafa = 2
+cc[1].smed Rafa = 2
+cc[1].tarj Rafa = 2
+cc[1].seg Rafa = 2
+cc[1].nat Rafa = 2
+cc[1].comis_rentab Rafa = 0.000000
+cc[1].comis_prod Rafa = 0.000000
+cc[1].comis_total Rafa = 0.000000
+
+Funcion h_update 1a vez
+El valor en el vector de coefs es: 0.919404
+El valor de update_gv es : 1
+h_update-> he mandado el signal
+h_update-> desbloqueo coefs_m
+Funcion h_prod dentro del while
+Funcion h_prod voy a dormir
+
+Funcion h_rentab dentro del while
+h_rentab -> El valor de la comision rentab de Lucia Penara es: 18.388079
+h_rentab -> El valor de la comision rentab de Rafael Leon es: 18.388079
+El valor de update_gv es : 2
+Funcion h_prod despierto
+h_prod -> El valor de la comision prod de Lucia Penara es: 27.582117
+h_prod -> El valor de la comision prod de Rafael Leon es: 27.582117
+El valor de update_gv es : 3
+Funcion h_prod dentro del while
+Funcion h_prod voy a dormir
+
+h_rentab ->Se supone que vuelvo al principio del while(1)
+Funcion h_rentab dentro del while
+Funcion h_rentab voy a dormir
+
+Funcion h_total en while
+El valor de la comision rentab es: 18.388079
+El valor de la comision prod es: 27.582117
+El valor de la comision total es: 45.970196
+
+El valor de la comision rentab es: 18.388079
+El valor de la comision prod es: 27.582117
+El valor de la comision total es: 45.970196
+
+El valor de update_gv es : 0
+Funcion h_total en while
+h_total -> Voy a dormir
+
+Funcion h_update dentro del while
+El valor en el vector de coefs es: 0.046794
+El valor de update_gv es : 1
+h_update se va a dormir
+
+Funcion h_prod despierto
+Funcion h_prod voy a dormir
