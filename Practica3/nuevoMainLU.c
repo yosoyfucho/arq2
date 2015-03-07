@@ -116,7 +116,7 @@ cuentas[i].comis_prod = 10*coefs[HIP] + 10*coefs[TARJ] + 10*coefs[SEG]
 void h_prod(){
 
 	int i;
-    float com_hip, desc_hip, com_tar, desc_tar, com_seg, desc_seg;
+    float desc_hip, desc_tar, desc_seg;
 
 	while(1){
 
@@ -150,43 +150,34 @@ void h_prod(){
             switch (cc[i].hip){
                 case 0:
                     desc_hip = 0;
-                   // com_hip = COMISION_DEFECTO - desc_hip;
                     break;
                 case 1:
                     desc_hip = coefs[0]*0.5*DESCUENTO_MAX;
-                   // com_hip = COMISION_DEFECTO - desc_hip;
                     break;
                 case 2:
                     desc_hip = coefs[0]*DESCUENTO_MAX;
-                    //com_hip = COMISION_DEFECTO - desc_hip;
                     break;
             }
             switch (cc[i].tarj){
                 case 0:
                     desc_tar = 0;
-                    //com_tar = COMISION_DEFECTO - desc_tar;
                     break;
                 case 1:
                     desc_tar = coefs[2]*0.5*DESCUENTO_MAX;
-                    //com_tar = COMISION_DEFECTO - desc_tar;
                     break;
                 case 2:
                     desc_tar = coefs[2]*DESCUENTO_MAX;
-                   // com_tar = COMISION_DEFECTO - desc_tar;
                     break;
             }
             switch (cc[i].seg){
                 case 0:
                     desc_seg = 0;
-                    //com_seg = COMISION_DEFECTO - desc_seg;
                     break;
                 case 1:
                     desc_seg = coefs[3]*0.5*DESCUENTO_MAX;
-                    //com_seg = COMISION_DEFECTO - desc_seg;
                     break;
                 case 2:
                     desc_seg = coefs[3]*DESCUENTO_MAX;
-                    //com_seg = COMISION_DEFECTO - desc_seg;
                     break;
             }
 
@@ -216,7 +207,7 @@ cuentas[i].comis_rentab = 10*coefs[SMED] + 10*coefs[NAT]
 */
 void h_rentab(){
 
-	int i, com_smed, desc_smed, com_nat, desc_nat;
+	int i, desc_smed, desc_nat;
 
 	while(1){
 
@@ -250,29 +241,23 @@ void h_rentab(){
             switch (cc[i].smed){
                 case 0:
                     desc_smed = 0;
-                    //com_smed = COMISION_DEFECTO - desc_smed;
                     break;
                 case 1:
                     desc_smed = coefs[2]*0.5*DESCUENTO_MAX;
-                    //com_smed = COMISION_DEFECTO - desc_smed;
                     break;
                 case 2:
                     desc_smed = coefs[2]*DESCUENTO_MAX;
-                    //com_smed = COMISION_DEFECTO - desc_smed;
                     break;
             }
             switch (cc[i].nat){
                 case 0:
                     desc_nat = 0;
-                    //com_nat = COMISION_DEFECTO - desc_nat;
                     break;
                 case 1:
                     desc_nat = coefs[3]*0.5*DESCUENTO_MAX;
-                    //com_nat = COMISION_DEFECTO - desc_nat;
                     break;
                 case 2:
                     desc_nat = coefs[3]*DESCUENTO_MAX;
-                    //com_nat = COMISION_DEFECTO - desc_nat;
                     break;
             }
 			cc[i].comis_rentab = desc_smed + desc_nat;
