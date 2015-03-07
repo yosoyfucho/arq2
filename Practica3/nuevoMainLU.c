@@ -15,6 +15,8 @@ Constantes
 #define NUM_CLIENTS 2
 #define DESCUENTO_MAX 10
 #define COMISION_DEFECTO 50
+#define COMISION_RENT_MAX 20
+#define COMISION_PROD_MAX 30
 
 /*
 Bibliotecas
@@ -181,8 +183,8 @@ void h_prod(){
                     break;
             }
 
-			cc[i].comis_prod = desc_hip + desc_tar + desc_seg;
-            printf("h_prod -> El descuento en la comision prod de %s es: %.2f euros\n", cc[i].titular, cc[i].comis_prod);
+			cc[i].comis_prod = COMISION_PROD_MAX - (desc_hip + desc_tar + desc_seg);
+            printf("h_prod -> La comision prod de %s es: %.2f euros\n", cc[i].titular, cc[i].comis_prod);
 		}
 
         prod_ok = 1;
@@ -260,8 +262,8 @@ void h_rentab(){
                     desc_nat = coefs[3]*DESCUENTO_MAX;
                     break;
             }
-			cc[i].comis_rentab = desc_smed + desc_nat;
-            printf("h_rentab -> El descuento en la comision rentab de %s es: %.2f euros\n", cc[i].titular, cc[i].comis_rentab);
+			cc[i].comis_rentab = COMISION_RENT_MAX - (desc_smed + desc_nat);
+            printf("h_rentab -> La comision rentab de %s es: %.2f euros\n", cc[i].titular, cc[i].comis_rentab);
 		}
 
         rent_ok = 1;
@@ -321,7 +323,7 @@ void h_total(){
 			    printf("El valor de la comision prod es: %f\n",cc[i].comis_prod);
             #endif
 
-			cc[i].comis_total = COMISION_DEFECTO - (cc[i].comis_rentab + cc[i].comis_prod);
+			cc[i].comis_total = cc[i].comis_rentab + cc[i].comis_prod;
 
 			printf("h_total -> El valor de la comision total de %s es: %.2f euros\n",cc[i].titular, cc[i].comis_total);
 		}
