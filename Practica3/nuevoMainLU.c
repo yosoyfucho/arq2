@@ -13,6 +13,8 @@ Constantes
 #define RAND_MAX 1
 #define NUM_COEFS 5
 #define NUM_CLIENTS 2
+#define DESCUENTO_MAX 10
+#define COMISION_DEFECTO 50
 
 /*
 Bibliotecas
@@ -114,6 +116,7 @@ cuentas[i].comis_prod = 10*coefs[HIP] + 10*coefs[TARJ] + 10*coefs[SEG]
 void h_prod(){
 
 	int i;
+    float com_hip, desc_hip, com_tar, desc_tar, com_seg, desc_seg;
 
 	while(1){
 
@@ -144,8 +147,51 @@ void h_prod(){
         #endif
 
 		for(i=0; i<NUM_CLIENTS; i++){
-			cc[i].comis_prod = 10*coefs[0] + 10*coefs[2] + 10*coefs[3];
-            printf("h_prod -> El valor de la comision prod de %s es: %f\n", cc[i].titular, cc[i].comis_prod);
+            switch (cc[i].hip){
+                case 0:
+                    desc_hip = 0;
+                   // com_hip = COMISION_DEFECTO - desc_hip;
+                    break;
+                case 1:
+                    desc_hip = coefs[0]*0.5*DESCUENTO_MAX;
+                   // com_hip = COMISION_DEFECTO - desc_hip;
+                    break;
+                case 2:
+                    desc_hip = coefs[0]*DESCUENTO_MAX;
+                    //com_hip = COMISION_DEFECTO - desc_hip;
+                    break;
+            }
+            switch (cc[i].tarj){
+                case 0:
+                    desc_tar = 0;
+                    //com_tar = COMISION_DEFECTO - desc_tar;
+                    break;
+                case 1:
+                    desc_tar = coefs[2]*0.5*DESCUENTO_MAX;
+                    //com_tar = COMISION_DEFECTO - desc_tar;
+                    break;
+                case 2:
+                    desc_tar = coefs[2]*DESCUENTO_MAX;
+                   // com_tar = COMISION_DEFECTO - desc_tar;
+                    break;
+            }
+            switch (cc[i].seg){
+                case 0:
+                    desc_seg = 0;
+                    //com_seg = COMISION_DEFECTO - desc_seg;
+                    break;
+                case 1:
+                    desc_seg = coefs[3]*0.5*DESCUENTO_MAX;
+                    //com_seg = COMISION_DEFECTO - desc_seg;
+                    break;
+                case 2:
+                    desc_seg = coefs[3]*DESCUENTO_MAX;
+                    //com_seg = COMISION_DEFECTO - desc_seg;
+                    break;
+            }
+
+			cc[i].comis_prod = desc_hip + desc_tar + desc_seg;
+            printf("h_prod -> El descuento en la comision prod de %s es: %.2f euros\n", cc[i].titular, cc[i].comis_prod);
 		}
 
         prod_ok = 1;
@@ -170,7 +216,7 @@ cuentas[i].comis_rentab = 10*coefs[SMED] + 10*coefs[NAT]
 */
 void h_rentab(){
 
-	int i;
+	int i, com_smed, desc_smed, com_nat, desc_nat;
 
 	while(1){
 
@@ -201,8 +247,36 @@ void h_rentab(){
         #endif
 
 		for(i=0; i<NUM_CLIENTS; i++){
-			cc[i].comis_rentab = 10*coefs[1] + 10*coefs[4];
-            printf("h_rentab -> El valor de la comision rentab de %s es: %f\n", cc[i].titular, cc[i].comis_rentab);
+            switch (cc[i].smed){
+                case 0:
+                    desc_smed = 0;
+                    //com_smed = COMISION_DEFECTO - desc_smed;
+                    break;
+                case 1:
+                    desc_smed = coefs[2]*0.5*DESCUENTO_MAX;
+                    //com_smed = COMISION_DEFECTO - desc_smed;
+                    break;
+                case 2:
+                    desc_smed = coefs[2]*DESCUENTO_MAX;
+                    //com_smed = COMISION_DEFECTO - desc_smed;
+                    break;
+            }
+            switch (cc[i].nat){
+                case 0:
+                    desc_nat = 0;
+                    //com_nat = COMISION_DEFECTO - desc_nat;
+                    break;
+                case 1:
+                    desc_nat = coefs[3]*0.5*DESCUENTO_MAX;
+                    //com_nat = COMISION_DEFECTO - desc_nat;
+                    break;
+                case 2:
+                    desc_nat = coefs[3]*DESCUENTO_MAX;
+                    //com_nat = COMISION_DEFECTO - desc_nat;
+                    break;
+            }
+			cc[i].comis_rentab = desc_smed + desc_nat;
+            printf("h_rentab -> El descuento en la comision rentab de %s es: %.2f euros\n", cc[i].titular, cc[i].comis_rentab);
 		}
 
         rent_ok = 1;
@@ -262,9 +336,9 @@ void h_total(){
 			    printf("El valor de la comision prod es: %f\n",cc[i].comis_prod);
             #endif
 
-			cc[i].comis_total = cc[i].comis_rentab + cc[i].comis_prod;
+			cc[i].comis_total = COMISION_DEFECTO - (cc[i].comis_rentab + cc[i].comis_prod);
 
-			printf("h_total -> El valor de la comision total de %s es: %f\n",cc[i].titular, cc[i].comis_total);
+			printf("h_total -> El valor de la comision total de %s es: %.2f euros\n",cc[i].titular, cc[i].comis_total);
 		}
         printf("\n");
 
@@ -295,10 +369,15 @@ void h_update(){
 
         valor = double_rand();
 
-        printf("h_update -> El valor en el vector de coefs es: %f \n", valor);
+        printf("h_update -> El valor en el vector de coefs es: {");
 
         for(i=0; i<NUM_COEFS; i++){
             coefs[i]=valor;
+            if(i==NUM_COEFS-1){
+                printf("%.2f}\n", valor);
+            }else{
+                printf("%.2f, ", valor);
+            }
         }
 
         update_ok = 1;
@@ -356,11 +435,11 @@ int main(){
     cc[0].titular = (char *)malloc(sizeof(char));
     strcpy(cc[0].titular,"Lucia Penaranda");
     cc[0].saldo = 1000;
-    cc[0].hip = 1;
-    cc[0].smed = 1;
-    cc[0].tarj = 1;
-    cc[0].seg = 1;
-    cc[0].nat = 1;
+    cc[0].hip = 0;
+    cc[0].smed = 0;
+    cc[0].tarj = 0;
+    cc[0].seg = 0;
+    cc[0].nat = 0;
     cc[0].comis_rentab = 0;
     cc[0].comis_prod = 0;
     cc[0].comis_total = 0;
