@@ -79,9 +79,7 @@ int rent_ok;
 int prod_ok;
 int update_ok;
 struct cuenta_corriente cc[NUM_CLIENTS];
-float coefs[5];
-//int update_gv; //0 no hay update 1 hay update
-				/*coefs[0] = hip;
+float coefs[5];	/*coefs[0] = hip;
                 coefs[1] = smed;
                 coefs[2] = tarj;
                 coefs[3] = seg;
@@ -119,19 +117,17 @@ void h_prod(){
 
 	while(1){
 
-        //aleatorio = rand()%10;
-        sleep(5);
+        sleep(3);
 
         #if DEBUG
             printf("h_prod -> Dentro del while\n");
         #endif
         
         pthread_mutex_lock(&coefs_m);    
-        printf("h_prod -> update_ok = %d\n",update_ok);
 
         while(update_ok!=1){
             #if DEBUG
-                //printf("h_prod -> update_ok = %d\n",update_ok);
+                printf("h_prod -> update_ok = %d\n",update_ok);
                 printf("h_prod -> Voy a dormir\n");
                 printf("\n");
             #endif
@@ -149,9 +145,7 @@ void h_prod(){
 
 		for(i=0; i<NUM_CLIENTS; i++){
 			cc[i].comis_prod = 10*coefs[0] + 10*coefs[2] + 10*coefs[3];
-            #if DEBUG
-                printf("h_prod -> El valor de la comision prod de %s es: %f\n", cc[i].titular, cc[i].comis_prod);
-            #endif
+            printf("h_prod -> El valor de la comision prod de %s es: %f\n", cc[i].titular, cc[i].comis_prod);
 		}
 
         prod_ok = 1;
@@ -180,18 +174,17 @@ void h_rentab(){
 
 	while(1){
 
-       // aleatorio = rand()%10;
-        sleep(5);
+        sleep(3);
 
         #if DEBUG
             printf("h_rentab -> Dentro del while\n");
         #endif
 
         pthread_mutex_lock(&coefs_m);
-        printf("h_rentab -> update_ok = %d\n",update_ok);
+
         while(update_ok!=1){
             #if DEBUG
-              //  printf("h_rentab -> update_ok = %d\n",update_ok);
+                printf("h_rentab -> update_ok = %d\n",update_ok);
                 printf("h_rentab -> Voy a dormir\n");
                 printf("\n");
             #endif
@@ -209,9 +202,7 @@ void h_rentab(){
 
 		for(i=0; i<NUM_CLIENTS; i++){
 			cc[i].comis_rentab = 10*coefs[1] + 10*coefs[4];
-            #if DEBUG
-                printf("h_rentab -> El valor de la comision rentab de %s es: %f\n", cc[i].titular, cc[i].comis_rentab);
-            #endif
+            printf("h_rentab -> El valor de la comision rentab de %s es: %f\n", cc[i].titular, cc[i].comis_rentab);
 		}
 
         rent_ok = 1;
@@ -243,7 +234,7 @@ void h_total(){
 
 	while(1){
 
-         sleep(5);
+        sleep(3);
 
         #if DEBUG
             printf("h_total -> En while\n");
@@ -261,26 +252,27 @@ void h_total(){
 
         rent_ok = 0;
         prod_ok = 0;
-           
+
         pthread_mutex_lock(&fin_m);
 
 		for(i=0; i<NUM_CLIENTS; i++){
-			printf("El valor de la comision rentab es: %f\n",cc[i].comis_rentab);
-			printf("El valor de la comision prod es: %f\n",cc[i].comis_prod);
+
+            #if DEBUG
+			    printf("El valor de la comision rentab es: %f\n",cc[i].comis_rentab);
+			    printf("El valor de la comision prod es: %f\n",cc[i].comis_prod);
+            #endif
 
 			cc[i].comis_total = cc[i].comis_rentab + cc[i].comis_prod;
 
-			printf("El valor de la comision total es: %f\n",cc[i].comis_total);
-            printf("\n");
+			printf("h_total -> El valor de la comision total de %s es: %f\n",cc[i].titular, cc[i].comis_total);
 		}
+        printf("\n");
 
 		pthread_cond_signal(&fin_calculo_cv);
 		pthread_mutex_unlock(&fin_m);
 		pthread_mutex_unlock(&cuentas_m);
 	}
 }
-
-
 
 /*
 Funcion h_update()
@@ -303,9 +295,7 @@ void h_update(){
 
         valor = double_rand();
 
-        #if DEBUG
-            printf("h_update -> El valor en el vector de coefs es: %f \n", valor);
-        #endif
+        printf("h_update -> El valor en el vector de coefs es: %f \n", valor);
 
         for(i=0; i<NUM_COEFS; i++){
             coefs[i]=valor;
@@ -388,31 +378,30 @@ int main(){
     cc[1].comis_prod = 0;
     cc[1].comis_total = 0;
 
-    #if DEBUG
-        printf("Main:\n");
-        printf("cc[0].titular = %s\n",cc[0].titular);
-        printf("cc[0].saldo Lucia = %ld\n", cc[0].saldo);
-        printf("cc[0].hip Lucia = %d\n", cc[0].hip);
-        printf("cc[0].smed Lucia = %d\n", cc[0].smed);
-        printf("cc[0].tarj Lucia = %d\n", cc[0].tarj);
-        printf("cc[0].seg Lucia = %d\n", cc[0].seg);
-        printf("cc[0].nat Lucia = %d\n", cc[0].nat);
-        printf("cc[0].comis_rentab Lucia = %f\n", cc[0].comis_rentab);
-        printf("cc[0].comis_prod Lucia = %f\n", cc[0].comis_prod);
-        printf("cc[0].comis_total Lucia = %f\n", cc[0].comis_total);
-        printf("\n");
-        printf("cc[1].titular = %s\n",cc[1].titular);
-        printf("cc[1].saldo Rafa = %ld\n", cc[1].saldo);
-        printf("cc[1].hip Rafa = %d\n", cc[1].hip);
-        printf("cc[1].smed Rafa = %d\n", cc[1].smed);
-        printf("cc[1].tarj Rafa = %d\n", cc[1].tarj);
-        printf("cc[1].seg Rafa = %d\n", cc[1].seg);
-        printf("cc[1].nat Rafa = %d\n", cc[1].nat);
-        printf("cc[1].comis_rentab Rafa = %f\n", cc[1].comis_rentab);
-        printf("cc[1].comis_prod Rafa = %f\n", cc[1].comis_prod);
-        printf("cc[1].comis_total Rafa = %f\n", cc[1].comis_total);
-        printf("\n");
-    #endif
+    printf("Main:\n");
+    printf("cc[0].titular = %s\n",cc[0].titular);
+    printf("cc[0].saldo Lucia = %ld\n", cc[0].saldo);
+    printf("cc[0].hip Lucia = %d\n", cc[0].hip);
+    printf("cc[0].smed Lucia = %d\n", cc[0].smed);
+    printf("cc[0].tarj Lucia = %d\n", cc[0].tarj);
+    printf("cc[0].seg Lucia = %d\n", cc[0].seg);
+    printf("cc[0].nat Lucia = %d\n", cc[0].nat);
+    printf("cc[0].comis_rentab Lucia = %f\n", cc[0].comis_rentab);
+    printf("cc[0].comis_prod Lucia = %f\n", cc[0].comis_prod);
+    printf("cc[0].comis_total Lucia = %f\n", cc[0].comis_total);
+    printf("\n");
+    printf("cc[1].titular = %s\n",cc[1].titular);
+    printf("cc[1].saldo Rafa = %ld\n", cc[1].saldo);
+    printf("cc[1].hip Rafa = %d\n", cc[1].hip);
+    printf("cc[1].smed Rafa = %d\n", cc[1].smed);
+    printf("cc[1].tarj Rafa = %d\n", cc[1].tarj);
+    printf("cc[1].seg Rafa = %d\n", cc[1].seg);
+    printf("cc[1].nat Rafa = %d\n", cc[1].nat);
+    printf("cc[1].comis_rentab Rafa = %f\n", cc[1].comis_rentab);
+    printf("cc[1].comis_prod Rafa = %f\n", cc[1].comis_prod);
+    printf("cc[1].comis_total Rafa = %f\n", cc[1].comis_total);
+    printf("\n");
+    
 
     /*Inicializacion de los mutexes*/
     pthread_mutex_init(&coefs_m, NULL);
