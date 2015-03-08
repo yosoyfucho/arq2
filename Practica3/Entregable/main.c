@@ -3,6 +3,10 @@ Lucia Peñaranda Pardo, NIA: 100068468
 Rafael León Miranda, NIA: 100275593
 Practica 3 Ejercicio 4
 Arquitectura de Sistemas 2
+Linea de compilacion basica:
+	gcc -Wall -pthread -g -o main main.c
+Linea de compilacion con mensajes de depuracion:
+	gcc -Wall -pthread -DDEBUG -g -o main main.c
 */
 
 /*
