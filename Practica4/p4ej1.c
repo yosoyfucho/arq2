@@ -23,99 +23,115 @@ Mensajes de depuración disponibles con -DDEBUG
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <wait.h>
+#include <mqueue.h>
 
 /* Constantes */
 
-#define MAX_MESSAGE_SIZE 8
+#define MAX_MESSAGE_SIZE 11
 
+/*Estructuras*/
 
 /* Variables globales */
 
 /* Prototipos de funciones */
+void productor();
+void consumidor();
+
+/*Funcion Productor() envia mensajes a la cola*/
+void productor(char buffer[MAX_MESSAGE_SIZE]){
+	#if DEBUG
+		printf("PRODUCTOR -> Acabamos de entrar en la funcion productor()\n");
+	#endif
+
+	if(mq_send(mqd,buffer,sizeof(20*char),0)==-1)
+		printf("PRODUCTOR -> Error en mq_send\n");
+
+}
+
+/*Funcion Consumidor() recibe mensajes de la cola*/
+void consumidor(){
+	#if DEBUG
+		printf("CONSUMIDOR -> Acabamos de entrar en la funcion consumidor()\n");
+	#endif
+}
 
 
 /* Main */
 int main (int argc, char *argv[]){
 
 	mqd_t mqd;
+	struct mq_attr atributos;
+	char palabras[MAX_MESSAGE_SIZE];
+	int i;
 
-	if(argc!=2 || strcmp(argv[1], "--help")==0)
+	atributos.mq_maxmsg = MAX_MESSAGE_SIZE;
+	atributos.mq_msgsize = sizeof(20*char);
+
+	if ((mqd = mq_open("comq",O_CREAT, 0777, &atributos))==-1){
+		printf("MAIN ->Error en mq_open\n");
+		exit(-1);
+	}
+
+	#if DEBUG
+		printf("MAIN -> Se ha creado la cola de mensajes de nombre comq\n");
+	#endif
+
+	if(argc!=2 || strcmp(argv[1], "--help")==0){
 		usageErr("%s mq-name\n", argv[0]);
-	
+	}else{
+		printf("PALABRAS = { ");
+		for(i=0; i<MAX_MESSAGE_SIZE; i++){
+			palabras[i]=argv[i];
+			printf(palabras[i]);
+			if(i!=(MAX_MESSAGE_SIZE-1)){
+				printf(",");
+			}
+		}
+		printf("}\n");
+	}
 
 	pid_t pid, parent;
 	
 	pid = fork();
 	if (pid<0){
 		perror("fork");
-	}else{
+	}else if (pid == 0){
 		
-		if (pid == 0){
 			/* Soy el primer hijo*/
-			#if DEBUG
-				printf("Creado el primer hijo (Productor) (PID %d)\n",getpid());
-			#endif
+	
 			pid = getpid();
 			parent = getppid();
-			printf("Soy el Productor (PID %d PPID %d)\n",pid,parent);
 
 			#if DEBUG
-				printf("Lanzo mi funcion Productor (PID %d)\n",pid);
+				printf("MAIN -> Creado primer hijo (Consumidor) (PID %d)\n", getpid());
 			#endif
-				productor();
+
+			pid = getpid();
+			parent = getppid();
+			printf("MAIN -> Soy el Consumidor (PID %d PPID %d)\n",pid,parent);
 
 			#if DEBUG
-				printf("El productor ha salido de su función (PID %d)\n",pid);
+				printf("MAIN -> Lanzo mi funcion Consumidor (PID %d)\n",pid);
 			#endif
 
-			exit(0);
-		}else{
+			consumidor();
 
 			#if DEBUG
-			printf("Estoy en el padre y voy a crear al segundo hijo\n");
+				printf("MAIN -> He salido de mi funcion (Consumidor)(PID %d)\n",pid);
 			#endif
-
-			pid = fork();
-
-			if (pid <0){
-				perror("fork");
-			}else{
-				if (pid == 0){
-				/* Soy el segundo hijo - Consumidor */
-				#if DEBUG
-					printf("Creado el segundo hijo (Consumidor) (PID %d)\n", getpid());
-				#endif
-				pid = getpid();
-				parent = getppid();
-				printf("Soy el Consumidor (PID %d PPID %d)\n",pid,parent);
-
-				#if DEBUG
-					printf("Lanzo mi funcion Consumidor (PID %d)\n",pid);
-				#endif
-
-				consumidor();
-
-				#if DEBUG
-					printf("He salido de mi funcion (Consumidor)(PID %d)\n",pid);
-				#endif
-				exit(0);
-
-				}else{
-			
-					/* Soy el padre */
-					#if DEBUG
-						printf("Soy el padre y ya he creado a todos mis hijos (PID %d)\n", getpid());
-					#endif
-						
-					pid = getpid();
-					printf("Soy el padre (PID %d)\n",pid );
-					padre();
-					wait(NULL);
-					exit(0);
-				}
-			}
+		
+			exit(0);	
 		}
-
-	}
-return 0;
+			
+		/* Soy el padre */
+		#if DEBUG
+			printf("MAIN -> Soy el padre y ya he creado a mi hijo (PID %d)\n", getpid());
+		#endif
+					
+		pid = getpid();
+		printf("MAIN -> Soy el padre (Productor)(PID %d)\n",pid );
+		productor(palabras);
+		exit(0);	
+	}	
+	return 0;
 }
