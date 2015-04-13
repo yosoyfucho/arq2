@@ -74,6 +74,9 @@ int main (int argc, char *argv[]){
 
 	atributos.mq_maxmsg = MAX_MESSAGE_SIZE;
 	atributos.mq_msgsize = 30*sizeof(char);
+	atributos.mq_flags = 0;
+	atributos.mq_curmsgs = 0;
+
 
 	mqd_q = mq_open("/New Queue",O_CREAT|O_RDWR, 0777, &atributos);
 
