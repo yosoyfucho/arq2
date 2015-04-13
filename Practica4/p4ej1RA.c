@@ -68,24 +68,24 @@ void consumidor(){
 /* Main */
 int main (int argc, char *argv[]){
 
-	struct mq_attr atributos;
+	struct mq_attr attr;
 	char * palabras[MAX_MESSAGE_SIZE];
 	int i;
 
-	atributos.mq_maxmsg = MAX_MESSAGE_SIZE;
-	atributos.mq_msgsize = 30*sizeof(char);
-	atributos.mq_flags = 0;
-	atributos.mq_curmsgs = 0;
 
+	attr.mq_flags = 0;
+  	attr.mq_maxmsg = 10;
+  	attr.mq_msgsize = 1024;
+  	attr.mq_curmsgs = 0;
+  
 
-	mqd_q = mq_open("/New Queue",O_CREAT|O_RDWR, 0777, &atributos);
+	mqd_q = mq_open("/newQueue",O_RDWR | O_CREAT, 0600, &attr);
 
-	if (mqd_q==-1){
-		printf("MAIN ->Error en mq_open\n");
-		printf("%d\n",mqd_q);
-		perror("mq_open");
-		exit(-1);
-	}
+  if (mqd_q == -1)
+  {
+     fprintf (stderr, "%s ERROR: mq_open(): %s\n", argv[0], strerror(errno));
+     exit(EXIT_FAILURE);
+  }
 
 	#if DEBUG
 		printf("MAIN -> Se ha creado la cola de mensajes de nombre comq\n");
