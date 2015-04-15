@@ -1,3 +1,14 @@
+/*
+Grupo 6
+Lucía Peñaranda Pardo
+Rafael León Miranda
+Práctica 4
+Ejercicio 1
+Uso de colas de mensajes para comunicación entre procesos
+Arquitectura de Sistemas II
+Esquema Padre(Productor) - Hijo(Consumidor)
+
+*/
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -13,7 +24,14 @@
 #define MAX_QUEUE_SIZE 2
 #define PERM_ALL 0600
 
+/*
+con Debug gcc -Wall -DDEBUG -lrt -g -o new cola1Rafa.c
+sin Debug  gcc -Wall -lrt -g -o new cola1Rafa.c
 
+Al ejecutar el primer parametro es el nombre de la cola
+
+./new /nombreCola Oye como va mi ritmo bueno pa
+*/
 
 
 int main (int argc, char * argv[])
@@ -52,10 +70,10 @@ int main (int argc, char * argv[])
     #endif
     exit(-1);
   }
+  int i;
   #if DEBUG
     printf("MAIN -> Cola %s creada", argv[1]);
     printf("MAIN -> Mensaje a enviar:\n");
-    int i;
     for (i=1;i<argc;i++)
     {
       printf("%s \n",argv[i]);
@@ -111,7 +129,7 @@ int main (int argc, char * argv[])
     		printf("	El valor del tamaño de %s es %d\n",argv[i],sizeof(argv[i]));
     	#endif
 
-      env = mq_send(mqd,argv[i],sizeof(argv[i]),0);
+      env = mq_send(mqd,argv[i],MAX_MESSAGE_SIZE,0);
 
       if (env == -1)
       {
@@ -129,12 +147,12 @@ int main (int argc, char * argv[])
     mq_unlink(argv[1]);
     mq_close(mqd);
 
-    return 0;
 
   }
 
 
 
+    return 0;
 
 
 
