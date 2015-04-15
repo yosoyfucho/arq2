@@ -42,7 +42,7 @@ Línea de compilación con mensajes de depuración:
 
 /* Variables globales */
 mqd_t mqd;
-char nombreCola[] = "miCola";
+char nombreCola[] = "/miCola";
 char * msg [MAX_MESSAGE_SIZE];
 
 extern int errno;
