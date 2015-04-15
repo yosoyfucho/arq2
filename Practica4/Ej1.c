@@ -30,6 +30,7 @@ Línea de compilación con mensajes de depuración:
 #include <fcntl.h>
 #include <wait.h>
 #include <mqueue.h>
+#include <import.h>
 #include <errno.h> //Lo incluyo para saber porque mq_open=-1
 
 /* Constantes */
