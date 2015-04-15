@@ -10,10 +10,10 @@ Esquema Padre(Productor) - Hijo(Consumidor)
 Mensajes de depuración disponibles con -DDEBUG
 
 Línea de compilacion sin mensajes de depuración:
- gcc -Wall -lrt -g -o p4_1 p4ej1.c
+ gcc -Wall -lrt -g -o p4_1 p4ej1RA.c
 
 Línea de compilación con mensajes de depuración:
- gcc -Wall -DDEBUG -lrt -g -o p4_1 p4ej1.c
+ gcc -Wall -DDEBUG -lrt -g -o p4_1 p4ej1RA.c
 */
 
 /* Librerias */
@@ -35,6 +35,8 @@ Línea de compilación con mensajes de depuración:
 /* Constantes */
 
 #define MAX_MESSAGE_SIZE 12
+#define MAX_SIZE 1024
+#define PERM_ALL 0777
 
 /*Estructuras*/
 
@@ -52,8 +54,24 @@ void productor(char * buffer, mqd_t mqd_q){
 		printf("PRODUCTOR -> Acabamos de entrar en la funcion productor()\n");
 	#endif
 
-	if(mq_send(mqd_q,buffer,20*sizeof(char),0)==-1)
+ //int mq_send(mqd_t mqdes, const char *msg_ptr,size_t msg_len, unsigned int msg_prio);
+	printf("Productor escribiendo...\n");
+	int rc = mq_send(mqd_q,buffer,sizeof(buffer)+1,1);
+	#if DEBUG
+		printf("PRODUCTOR -> he realizado la escritura\n");
+	#endif
+
+	//if(mq_send(mqd_q,buffer,MAX_SIZE,0)==-1)
+	if(rc<0)
+	{
 		printf("PRODUCTOR -> Error en mq_send\n");
+		#if DEBUG
+	    printf("Oh dear, something went wrong with mq_send()!: %d -> %s\n", errno, strerror(errno));
+	    #endif
+	}
+	else
+		printf("PRODUCTOR -> Mensaje enviado a la cola: %s\n", buffer);
+
 
 }
 
@@ -62,6 +80,18 @@ void consumidor(){
 	#if DEBUG
 		printf("CONSUMIDOR -> Acabamos de entrar en la funcion consumidor()\n");
 	#endif
+	char buffer[MAX_SIZE];
+
+	if(mq_receive(mqd_q,buffer,MAX_SIZE,NULL)==-1)
+	{
+		printf("CONSUMIDOR -> Error en mq_receive()\n");
+		#if DEBUG
+	    printf("Oh dear, something went wrong with mq_receive()! %s\n", strerror(errno));
+	    #endif
+	}
+	else
+		printf("CONSUMIDOR -> Mensaje enviado a la cola: %s\n", buffer);
+
 }
 
 
@@ -72,14 +102,14 @@ int main (int argc, char *argv[]){
 	char * palabras[MAX_MESSAGE_SIZE];
 	int i;
 
-
+	/* Definiendo los atributos de la estructura */
 	attr.mq_flags = 0;
-  	attr.mq_maxmsg = 10;
-  	attr.mq_msgsize = 1024;
+  	attr.mq_maxmsg = MAX_MESSAGE_SIZE;
+  	attr.mq_msgsize = 10*MAX_SIZE;
   	attr.mq_curmsgs = 0;
   
 
-	mqd_q = mq_open("/newQueue",O_RDWR | O_CREAT, 0600, &attr);
+	mqd_q = mq_open("/newQueue",O_RDWR | O_CREAT, PERM_ALL, &attr);
 
   if (mqd_q == -1)
   {
