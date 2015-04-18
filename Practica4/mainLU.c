@@ -17,7 +17,13 @@
 
 #define MAX_QUEUE_SIZE 6
 #define MAX_MESSAGE_SIZE 100
+#define NUM_THREADS 2
 
+void hilos();
+void operador_uno();
+void operador_dos();
+
+pthread_t hebras_t[NUM_THREADS];
 
 // static void notifySetup(mqd_t *mdqp);
 
@@ -74,6 +80,50 @@
 //     //Err mq_notify
 //   }
 // }
+
+void hilos(){
+
+  int ret, i;
+
+  #if DEBUG
+    printf("Voy a crear los hilos (OPERADORES) del proceso consumidor\n");
+  #endif
+
+  ret = pthread_create(&hebras_t[0], NULL, (void *)operador_uno, NULL);
+  if(ret){
+    printf("Main -> ERROR en pthread_create al crear operador_uno\n");
+    pthread_exit(NULL);
+  }
+  ret = pthread_create(&hebras_t[1], NULL, (void *)operador_dos, NULL);
+  if(ret){
+    printf("Main -> ERROR en pthread_create al crear operador_dos\n");
+    pthread_exit(NULL);
+  }
+  for(i=0;i<NUM_THREADS;i++){
+    ret = pthread_join(hebras_t[i],NULL);
+    #if DEBUG
+      printf("Main -> Ha terminado el hilo %d\n",i+1);
+    #endif
+
+    if(ret){
+      printf("Main -> ERROR en pthread_join\n");
+      pthread_exit(NULL);
+    }
+  }
+  pthread_exit(NULL);
+}
+
+void operador_uno(){
+  printf("--Operador1: (QUEJA) recibida. Atendiendo.\n");
+  sleep(1);
+  printf("--Operador1: (QUEJA) servida ***\n");
+}
+
+void operador_dos(){
+  printf("--Operador2: (QUEJA) recibida. Atendiendo.\n");
+  sleep(1);
+  printf("--Operador2: (QUEJA) servida ***\n");
+}
 
 int
 main (int argc, char *argv[])
@@ -144,6 +194,7 @@ main (int argc, char *argv[])
       }
       //Aqui tengo que llamar a la funcion que me cree los hilos
       //para atender las peticiones.
+      hilos();
       printf("--OperadorX: %s recibida. Atendiendo.\n", buffer);
       sleep(1);
       printf("--OperadorX: %s servida ***\n", buffer);
