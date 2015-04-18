@@ -83,12 +83,10 @@ main (int argc, char *argv[])
   char * nombre = "/quejas";
   int i, res_send, flags;
   int bytes_rec = 1;
-  pid_t pid;
+  pid_t pid, p_hijo;
 
   attr.mq_maxmsg = MAX_QUEUE_SIZE;
   attr.mq_msgsize = MAX_MESSAGE_SIZE;
-  //attr.mq_curmsgs = 0;
-  //attr.mq_flags = O_NONBLOCK;
   flags = O_RDWR | O_CREAT;
 
   if (argc < 2 || strcmp(argv[1], "--help")==0){
@@ -104,7 +102,7 @@ main (int argc, char *argv[])
     printf("\n");
   }
 
-    mqd = mq_open(nombre,flags, 0777, &attr);
+  mqd = mq_open(nombre,flags, 0777, &attr);
 
   if (mqd == -1){
       // Err en mq_open
@@ -117,21 +115,23 @@ main (int argc, char *argv[])
 
   if(pid == 0){
 
+    p_hijo = getpid();
+
     //Consumidor
+
     #if DEBUG
-      printf("MAIN -> Proceso hijo creado = Consumidor, pid: %d , ppid: %d\n", getpid(), getppid());
+      printf("MAIN -> Proceso hijo creado = Consumidor, pid: %d , ppid: %d\n", p_hijo, getppid());
     #endif
 
-    //consumidor();
     char * buffer = (char *)malloc(MAX_MESSAGE_SIZE); 
 
-    while (bytes_rec > 0)
-    {
-      printf("HOLA\n");
-      bytes_rec = mq_receive(mqd, buffer, MAX_MESSAGE_SIZE, 0);
-      if(bytes_rec==0){
+    while (bytes_rec > 0){
+      #if DEBUG
+        printf("Entro en el while del consumidor\n");
+      #endif
 
-      }
+      bytes_rec = mq_receive(mqd, buffer, MAX_MESSAGE_SIZE, 0);
+    
       #if DEBUG
         printf("bytes_rec = %d\n",bytes_rec);
       #endif
@@ -147,15 +147,11 @@ main (int argc, char *argv[])
       printf("--OperadorX: %s recibida. Atendiendo.\n", buffer);
       sleep(1);
       printf("--OperadorX: %s servida ***\n", buffer);
-      memset(buffer, 0, sizeof(buffer));
-      printf("Paso por memset, bytes_rec = %d\n", bytes_rec);
     }
+
     free(buffer);
     mq_close(mqd);
-    #if DEBUG
-      printf("Voy a cerrar el proceso hijo\n");
-    #endif
-    exit(0);
+    
   }else{
 
     //Productor
@@ -182,18 +178,13 @@ main (int argc, char *argv[])
     }
     mq_unlink(nombre);
     mq_close(mqd);
-    #if DEBUG
-      printf("Voy a esperar que finalice el proceso hijo\n");
-    #endif
-    wait(NULL);
-    #if DEBUG
-      printf("Voy a cerrar el proceso padre\n");
-    #endif
-    exit(0);
-
   }
   
  // notifySetup(&mqd);
  // pause(); /* Wait for notifications via thread function */
+  #if DEBUG
+    printf("Voy a matar el proceso hijo\n");
+  #endif
+  kill(p_hijo, SIGKILL);
   return 0;
 }
