@@ -81,7 +81,8 @@ main (int argc, char *argv[])
   mqd_t mqd;
   struct mq_attr attr;
   char * nombre = "/quejas";
-  int i, bytes_rec, res_send, flags;
+  int i, res_send, flags;
+  int bytes_rec = 1;
   pid_t pid;
 
   attr.mq_maxmsg = MAX_QUEUE_SIZE;
@@ -122,7 +123,39 @@ main (int argc, char *argv[])
     #endif
 
     //consumidor();
+    char * buffer = (char *)malloc(MAX_MESSAGE_SIZE); 
 
+    while (bytes_rec > 0)
+    {
+      printf("HOLA\n");
+      bytes_rec = mq_receive(mqd, buffer, MAX_MESSAGE_SIZE, 0);
+      if(bytes_rec==0){
+
+      }
+      #if DEBUG
+        printf("bytes_rec = %d\n",bytes_rec);
+      #endif
+      if(bytes_rec == -1){
+        printf("Error en mq_receive\n");
+        perror("mq_receive");
+        mq_unlink(argv[1]);
+        mq_close(mqd);
+        exit(-1);
+      }
+      //Aqui tengo que llamar a la funcion que me cree los hilos
+      //para atender las peticiones.
+      printf("--OperadorX: %s recibida. Atendiendo.\n", buffer);
+      sleep(1);
+      printf("--OperadorX: %s servida ***\n", buffer);
+      memset(buffer, 0, sizeof(buffer));
+      printf("Paso por memset, bytes_rec = %d\n", bytes_rec);
+    }
+    free(buffer);
+    mq_close(mqd);
+    #if DEBUG
+      printf("Voy a cerrar el proceso hijo\n");
+    #endif
+    exit(0);
   }else{
 
     //Productor
@@ -149,8 +182,17 @@ main (int argc, char *argv[])
     }
     mq_unlink(nombre);
     mq_close(mqd);
+    #if DEBUG
+      printf("Voy a esperar que finalice el proceso hijo\n");
+    #endif
+    wait(NULL);
+    #if DEBUG
+      printf("Voy a cerrar el proceso padre\n");
+    #endif
+    exit(0);
 
   }
+  
  // notifySetup(&mqd);
  // pause(); /* Wait for notifications via thread function */
   return 0;
