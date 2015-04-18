@@ -24,6 +24,9 @@ void operador_uno();
 void operador_dos();
 
 pthread_t hebras_t[NUM_THREADS];
+int tam;
+mqd_t mqd;
+char * outgoing ="END";
 
 // static void notifySetup(mqd_t *mdqp);
 
@@ -81,59 +84,121 @@ pthread_t hebras_t[NUM_THREADS];
 //   }
 // }
 
-void hilos(){
 
-  int ret, i;
+void operador_uno(){
+  int aux;
 
   #if DEBUG
-    printf("Voy a crear los hilos (OPERADORES) del proceso consumidor\n");
+    printf("__DEBUG in Operador1\n");
   #endif
+  ssize_t rcv =1;
+  char * buffer = (char*)malloc(MAX_MESSAGE_SIZE);
 
-  ret = pthread_create(&hebras_t[0], NULL, (void *)operador_uno, NULL);
-  if(ret){
-    printf("Main -> ERROR en pthread_create al crear operador_uno\n");
-    pthread_exit(NULL);
-  }
-  ret = pthread_create(&hebras_t[1], NULL, (void *)operador_dos, NULL);
-  if(ret){
-    printf("Main -> ERROR en pthread_create al crear operador_dos\n");
-    pthread_exit(NULL);
-  }
-  for(i=0;i<NUM_THREADS;i++){
-    ret = pthread_join(hebras_t[i],NULL);
+  while(rcv>0)
+  {
     #if DEBUG
-      printf("Main -> Ha terminado el hilo %d\n",i+1);
+      printf("__  __ DEBUG in while consumption\n");
     #endif
-
-    if(ret){
-      printf("Main -> ERROR en pthread_join\n");
-      pthread_exit(NULL);
+    rcv = mq_receive(mqd,buffer,MAX_MESSAGE_SIZE,0);
+    #if DEBUG
+      printf("    Value of rcv: %d \n",rcv);
+    #endif
+    if(rcv == -1)
+    {
+      printf("XXXX  Oh dear, something went wrong with mq_receive()! %s\n", strerror(errno));
+    }
+    else
+    {
+      printf("--Operador1: %s recibida. Atendiendo.\n", buffer);
+      sleep(2);
+      printf("--Operador1: %s servida ***\n", buffer);
+      #if DEBUG
+      printf("__  __ outgoing: %s , buffer: %s\n", outgoing,buffer);
+      #endif
+      if (strncmp(outgoing,buffer,MAX_MESSAGE_SIZE)==0)
+      {
+        #if DEBUG
+        printf("__ __  DEBUG exit while consumption\n");
+        #endif
+        break;
+      }
+      memset(buffer,0,MAX_MESSAGE_SIZE);
+      aux = rand()%3 + 2;
+      sleep(aux);
     }
   }
+  #if DEBUG
+    printf("__  __  DEBUG out of the while consumption\n");
+  #endif
+  free (buffer);
+  #if DEBUG
+    printf("__DEBUG CONSUMER OUT\n");
+  #endif
   pthread_exit(NULL);
 }
 
-void operador_uno(){
-  printf("--Operador1: (QUEJA) recibida. Atendiendo.\n");
-  sleep(1);
-  printf("--Operador1: (QUEJA) servida ***\n");
-}
-
 void operador_dos(){
-  printf("--Operador2: (QUEJA) recibida. Atendiendo.\n");
-  sleep(1);
-  printf("--Operador2: (QUEJA) servida ***\n");
+   int aux;
+
+  #if DEBUG
+    printf("__DEBUG in Operador1\n");
+  #endif
+  ssize_t rcv =1;
+  char * buffer = (char*)malloc(MAX_MESSAGE_SIZE);
+
+  while(rcv>0)
+  {
+    #if DEBUG
+      printf("__  __ DEBUG in while consumption\n");
+    #endif
+    rcv = mq_receive(mqd,buffer,MAX_MESSAGE_SIZE,0);
+    #if DEBUG
+      printf("    Value of rcv: %d \n",rcv);
+    #endif
+    if(rcv == -1)
+    {
+      printf("XXXX  Oh dear, something went wrong with mq_receive()! %s\n", strerror(errno));
+    }
+    else
+    {
+      printf("--Operador2: %s recibida. Atendiendo.\n", buffer);
+      sleep(2);
+      printf("--Operador2: %s servida ***\n", buffer);
+      #if DEBUG
+      printf("__  __ outgoing: %s , buffer: %s\n", outgoing,buffer);
+      #endif
+      if (strncmp(outgoing,buffer,MAX_MESSAGE_SIZE)==0)
+      {
+        #if DEBUG
+        printf("__ __  DEBUG exit while consumption\n");
+        #endif
+        break;
+      }
+      memset(buffer,0,MAX_MESSAGE_SIZE);
+      aux = rand()%3 + 2;
+      sleep(aux);
+    }
+  }
+  #if DEBUG
+    printf("__  __  DEBUG out of the while consumption\n");
+  #endif
+  free (buffer);
+  #if DEBUG
+    printf("__DEBUG CONSUMER OUT\n");
+  #endif
+  pthread_exit(NULL);
 }
 
 int
 main (int argc, char *argv[])
 {
-  mqd_t mqd;
+  
   struct mq_attr attr;
   char * nombre = "/quejas";
   int i, res_send, flags;
-  int bytes_rec = 1;
-  pid_t pid, p_hijo;
+  //int bytes_rec = 1;
+  pid_t pid;
+  pid_t p_hijo = 0;
 
   attr.mq_maxmsg = MAX_QUEUE_SIZE;
   attr.mq_msgsize = MAX_MESSAGE_SIZE;
@@ -151,7 +216,10 @@ main (int argc, char *argv[])
     printf("%s }\n", argv[argc-1]);
     printf("\n");
   }
-
+  tam = argc;
+  #if DEBUG
+    printf("tam = %d\n",tam);
+  #endif
   mqd = mq_open(nombre,flags, 0777, &attr);
 
   if (mqd == -1){
@@ -173,7 +241,77 @@ main (int argc, char *argv[])
       printf("MAIN -> Proceso hijo creado = Consumidor, pid: %d , ppid: %d\n", p_hijo, getppid());
     #endif
 
-    char * buffer = (char *)malloc(MAX_MESSAGE_SIZE); 
+      #if DEBUG
+    printf("DEBUG   Make ready for the threads\n");
+  #endif
+
+  //pthread_t threads_t[THREADS];
+  pthread_attr_t atributos;
+  pthread_attr_init(&atributos);
+  pthread_attr_setdetachstate(&atributos, PTHREAD_CREATE_JOINABLE);
+
+  int rc;
+
+  /* Creating the threads */
+  rc = pthread_create(&(hebras_t[0]),&atributos,(void *)operador_uno, NULL);
+  if (rc!=0)
+  {
+    errno = rc;
+    printf("XXXX  Oh dear, something went wrong with pthread_create() with publisher! %s\n", strerror(errno));
+    printf("      %d\n",rc);
+    if (mq_close(mqd)== (mqd_t)-1)
+    {
+      printf("XXXX  Oh dear, something went wrong with mq_close()! %s\n", strerror(errno));
+    }
+    if (mq_unlink(argv[1])== -1)
+    {
+      printf("XXXX  Oh dear, something went wrong with mq_unlink()! %s\n", strerror(errno));
+    }
+    exit(-1);
+  }
+
+  rc = pthread_create(&(hebras_t[1]),&atributos, (void *)operador_dos,NULL);
+  if (rc>0)
+  {
+    errno = rc;
+    printf("XXXX  Oh dear, something went wrong with pthread_create() with consumer! %s\n", strerror(rc));
+    printf("      %d\n",rc);
+    if (mq_close(mqd)== (mqd_t)-1)
+    {
+      printf("XXXX  Oh dear, something went wrong with mq_close()! %s\n", strerror(errno));
+    }
+    if (mq_unlink(argv[1])== -1)
+    {
+      printf("XXXX  Oh dear, something went wrong with mq_unlink()! %s\n", strerror(errno));
+    }
+    exit(-1);
+  }
+
+
+  #if DEBUG
+    printf("DEBUG   threads created\n");
+  #endif
+
+  /*Ending*/
+
+  pthread_attr_destroy(&atributos);
+  void * status;
+  for (i = 0; i < NUM_THREADS; i++)
+  {
+    pthread_join(hebras_t[i],&status);
+  }
+  if (mq_close(mqd)== (mqd_t)-1)
+  {
+    printf("XXXX  Oh dear, something went wrong with mq_close()! %s\n", strerror(errno));
+  }
+  if (mq_unlink(argv[1])== -1)
+  {
+    printf("XXXX  Oh dear, something went wrong with mq_unlink()! %s\n", strerror(errno));
+  }
+
+  pthread_exit(NULL);
+  
+  /*  char * buffer = (char *)malloc(MAX_MESSAGE_SIZE); 
 
     while (bytes_rec > 0){
       #if DEBUG
@@ -201,7 +339,7 @@ main (int argc, char *argv[])
     }
 
     free(buffer);
-    mq_close(mqd);
+    mq_close(mqd);*/
     
   }else{
 
