@@ -1,3 +1,13 @@
+/*
+Sin DEBUG
+gcc -Wall -lrt -pthread -g -o mainLu mainLU.c
+Con DEBUG
+gcc -Wall -lrt -DDBUG -pthread -g -o mainLu mainLU.c
+Ejecucion
+./mainLu QFactura QServicio QInstalacion QMovilNoVa QAveriaPendiente
+
+*/
+
 #include <pthread.h>
 #include <mqueue.h>
 #include <fcntl.h>            /* For definition of O_NONBLOCK */
@@ -134,14 +144,15 @@ void operador_uno(){
   #if DEBUG
     printf("__DEBUG CONSUMER OUT\n");
   #endif
-  pthread_exit(NULL);
+  //pthread_exit(NULL);
 }
 
 void operador_dos(){
-   int aux;
+  
+  int aux;
 
   #if DEBUG
-    printf("__DEBUG in Operador1\n");
+    printf("__DEBUG in Operador2\n");
   #endif
   ssize_t rcv =1;
   char * buffer = (char*)malloc(MAX_MESSAGE_SIZE);
@@ -149,7 +160,7 @@ void operador_dos(){
   while(rcv>0)
   {
     #if DEBUG
-      printf("__  __ DEBUG in while consumption\n");
+      printf("__  __ DEBUG in while consumption 2\n");
     #endif
     rcv = mq_receive(mqd,buffer,MAX_MESSAGE_SIZE,0);
     #if DEBUG
@@ -186,7 +197,7 @@ void operador_dos(){
   #if DEBUG
     printf("__DEBUG CONSUMER OUT\n");
   #endif
-  pthread_exit(NULL);
+  //pthread_exit(NULL);
 }
 
 int
@@ -350,7 +361,7 @@ main (int argc, char *argv[])
 
     printf("Cliente en espera... 5 segundos...\n");
     printf("\n");
-    sleep(5);
+    sleep(3);
 
     for (i = 1; i < argc; i++){
       res_send = mq_send(mqd, argv[i], MAX_MESSAGE_SIZE, 0);
@@ -359,7 +370,7 @@ main (int argc, char *argv[])
           printf("PRODUCTOR -> res_send = %d\n", res_send);
         #endif
         printf("Cliente: %s\n", argv[i]);
-        sleep(1);
+        sleep(3);
       }else if(res_send==-1){
         printf("PRODUCTOR -> Error en mq_send\n");
         perror("mq_send");
