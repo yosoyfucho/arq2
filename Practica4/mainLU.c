@@ -114,7 +114,7 @@ void operador_dos();
 
 void operador_uno(){
 
-  int aux;
+  int aux, res_send;
 
   #if DEBUG
     printf("__DEBUG in Operador1\n");
@@ -137,13 +137,15 @@ void operador_uno(){
     }
     else
     {
-      printf("--Operador1: %s recibida. Atendiendo.\n", buffer);
-      sleep(2);
-      printf("--Operador1: %s servida ***\n", buffer);
-      #if DEBUG
-      printf("__  __ Operador1 outgoing: %s , buffer: %s\n", outgoing,buffer);
-      #endif
-      if (strncmp(outgoing,buffer,MAX_MESSAGE_SIZE)==0)
+      if (strncmp(outgoing,buffer,MAX_MESSAGE_SIZE)!=0)
+      {
+        printf("--Operador1: %s recibida. Atendiendo.\n", buffer);
+        sleep(2);
+        printf("--Operador1: %s servida ***\n", buffer);
+        #if DEBUG
+          printf("__  __ Operador1 outgoing: %s , buffer: %s\n", outgoing,buffer);
+        #endif
+      }else
       {
         #if DEBUG
         printf("__ __  DEBUG exit while consumption Operador1\n");
@@ -158,6 +160,16 @@ void operador_uno(){
   #if DEBUG
     printf("__  __  DEBUG out of the while consumption Operador1\n");
   #endif
+  res_send = mq_send(mqd, outgoing, MAX_MESSAGE_SIZE, 0);
+  if(res_send==0){
+    #if DEBUG
+      printf("Operador1 -> res_send = %d\n", res_send);
+    #endif
+  }else if(res_send==-1){
+    printf("Operador1 -> Error en mq_send\n");
+    perror("mq_send");
+  }
+
   free (buffer);
   #if DEBUG
     printf("__DEBUG CONSUMER OUT Operador1\n");
@@ -166,7 +178,7 @@ void operador_uno(){
 
 void operador_dos(){
   
-  int aux;
+  int aux, res_send;
 
   #if DEBUG
     printf("__DEBUG in Operador2\n");
@@ -189,13 +201,14 @@ void operador_dos(){
     }
     else
     {
-      printf("--Operador2: %s recibida. Atendiendo.\n", buffer);
-      sleep(2);
-      printf("--Operador2: %s servida ***\n", buffer);
-      #if DEBUG
-      printf("__  __ Operador2 outgoing: %s , buffer: %s\n", outgoing,buffer);
-      #endif
-      if (strncmp(outgoing,buffer,MAX_MESSAGE_SIZE)==0)
+      if(strncmp(outgoing,buffer,MAX_MESSAGE_SIZE)!=0){
+        printf("--Operador2: %s recibida. Atendiendo.\n", buffer);
+        sleep(2);
+        printf("--Operador2: %s servida ***\n", buffer);
+        #if DEBUG
+          printf("__  __ Operador2 outgoing: %s , buffer: %s\n", outgoing,buffer);
+        #endif
+      }else
       {
         #if DEBUG
         printf("__ __  DEBUG exit while consumption Operador2\n");
@@ -210,6 +223,16 @@ void operador_dos(){
   #if DEBUG
     printf("__  __  DEBUG out of the while consumption Operador2\n");
   #endif
+  res_send = mq_send(mqd, outgoing, MAX_MESSAGE_SIZE, 0);
+  if(res_send==0){
+    #if DEBUG
+      printf("Operador2 -> res_send = %d\n", res_send);
+    #endif
+  }else if(res_send==-1){
+    printf("Operador2 -> Error en mq_send\n");
+    perror("mq_send");
+  }
+
   free (buffer);
   #if DEBUG
     printf("__DEBUG CONSUMER OUT Operador2\n");
@@ -222,9 +245,9 @@ main (int argc, char *argv[])
   
   struct mq_attr attr;
   char * nombre = "/quejas";
-  int i, res_send, flags, dead;
+  int i, res_send, flags;// dead;
   pid_t pid;
-  pid_t p_hijo = 0;
+ // pid_t p_hijo = 0;
 
   attr.mq_maxmsg = MAX_QUEUE_SIZE;
   attr.mq_msgsize = MAX_MESSAGE_SIZE;
@@ -259,12 +282,12 @@ main (int argc, char *argv[])
 
   if(pid == 0){
 
-    p_hijo = getpid();
+    //p_hijo = getpid();
 
     //Consumidor
 
     #if DEBUG
-      printf("MAIN -> Proceso hijo creado = Consumidor, pid: %d , ppid: %d\n", p_hijo, getppid());
+      printf("MAIN -> Proceso hijo creado = Consumidor, pid: %d , ppid: %d\n", getpid(), getppid());
     #endif
 
     #if DEBUG
@@ -288,7 +311,7 @@ main (int argc, char *argv[])
       {
         printf("XXXX  Oh dear, something went wrong with mq_close()! in MAIN thread Operador1 %s\n", strerror(errno));
       }
-      if (mq_unlink(argv[1])== -1)
+      if (mq_unlink(nombre)== -1)
       {
         printf("XXXX  Oh dear, something went wrong with mq_unlink()! in MAIN thread Operador1 %s\n", strerror(errno));
       }
@@ -305,7 +328,7 @@ main (int argc, char *argv[])
       {
         printf("XXXX  Oh dear, something went wrong with mq_close()! in MAIN thread Operador2 %s\n", strerror(errno));
       }
-      if (mq_unlink(argv[1])== -1)
+      if (mq_unlink(nombre)== -1)
       {
         printf("XXXX  Oh dear, something went wrong with mq_unlink()! in MAIN thread Operador2 %s\n", strerror(errno));
       }
@@ -329,12 +352,14 @@ main (int argc, char *argv[])
     {
       printf("XXXX  Oh dear, something went wrong with mq_close()! in MAIN %s\n", strerror(errno));
     }
-    if (mq_unlink(argv[1])== -1)
+    if (mq_unlink(nombre)== -1)
     {
       printf("XXXX  Oh dear, something went wrong with mq_unlink()! in MAIN %s\n", strerror(errno));
     }
 
     pthread_exit(NULL);
+    printf("Fin del proceso hijo\n");
+    exit(0);
     
   }else{
 
@@ -354,19 +379,32 @@ main (int argc, char *argv[])
           printf("PRODUCTOR -> res_send = %d\n", res_send);
         #endif
         printf("Cliente: %s\n", argv[i]);
-        sleep(3);
+        sleep(1);
       }else if(res_send==-1){
         printf("PRODUCTOR -> Error en mq_send\n");
         perror("mq_send");
       }
     }
+
+    res_send = mq_send(mqd, outgoing, MAX_MESSAGE_SIZE, 0);
+    if(res_send==0){
+      #if DEBUG
+        printf("PRODUCTOR -> He mandado el outgoing res_send = %d\n", res_send);
+      #endif
+    }else if(res_send==-1){
+      #if DEBUG
+        printf("PRODUCTOR -> Error en mq_send cuando mando outgoing\n");
+        perror("mq_send");
+      #endif
+    }
+    wait(NULL);
     mq_unlink(nombre);
     mq_close(mqd);
   }
   
  // notifySetup(&mqd);
  // pause(); /* Wait for notifications via thread function */
-  #if DEBUG
+ /* #if DEBUG
     printf("Voy a matar el proceso hijo\n");
   #endif
   dead = kill(p_hijo, SIGKILL);
@@ -378,6 +416,6 @@ main (int argc, char *argv[])
     #if DEBUG
       printf("Proceso hijo sigue vivo\n");
     #endif
-  }
+  }*/
   return 0;
 }
