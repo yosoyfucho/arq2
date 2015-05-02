@@ -5,7 +5,7 @@
 using namespace std;
 using namespace UC3M;
 
-/*Compilar 
+/*Compilar
 gcc -I. -c StringService.cpp ArithmeticService.cpp client.cpp
 gcc -o client client.o StringService.o ArithmeticService.o -lIce -lIceUtil
 */
@@ -27,19 +27,19 @@ main (int argc, char* argv [])
 		Ice :: ObjectPrx base1 = ic ->stringToProxy("StringService: default -h localhost -p 10000");
 
 		// new for Arithmetic
-		Ice :: ObjectPrx base2 = ic ->stringToProxy("StringService: default -h localhost -p 10001");
+		Ice :: ObjectPrx base2 = ic ->stringToProxy("ArithmeticService: default -h localhost -p 10001");
 
 		StringServicePrx remoteService = StringServicePrx::checkedCast(base1);
-		
+
 		// new for Arithmetic
 		ArithmeticServicePrx remoteService2 = ArithmeticServicePrx::checkedCast(base2);
 
 
-		if(!remoteService)
+		if((!remoteService)||(!remoteService2))
 			throw "Invalid proxy";
 
 		// your client code here!
-		
+
 		cout << "size of \"\" : "
 			 << remoteService->stringSize("") << endl;
 		cout << "size of \"a\" : "
@@ -54,7 +54,7 @@ main (int argc, char* argv [])
 			 << remoteService2->addIntegers(a,b) << endl;
 		cout << "subtract of \"b - a\" : "
 			 << remoteService2->subtractIntegers(a,b) << endl;
-	
+
 	}
 	catch (const Ice :: Exception& ex)
 	{
