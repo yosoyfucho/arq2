@@ -19,15 +19,20 @@ main (int argc, char* argv [])
 	b = 8;
 
 	Ice :: CommunicatorPtr ic;
+	// new for Arithmetic
+	Ice :: CommunicatorPtr ic2;
 
 	try
 	{
 		ic = Ice :: initialize(argc,argv);
 
+		// new for Arithmetic
+		ic2 = Ice :: initialize(argc,argv);
+
 		Ice :: ObjectPrx base1 = ic ->stringToProxy("StringService: default -h localhost -p 10000");
 
 		// new for Arithmetic
-		Ice :: ObjectPrx base2 = ic ->stringToProxy("ArithmeticService: default -h localhost -p 10001");
+		Ice :: ObjectPrx base2 = ic2 ->stringToProxy("ArithmeticService: default -h localhost -p 10001");
 
 		StringServicePrx remoteService = StringServicePrx::checkedCast(base1);
 
@@ -35,7 +40,7 @@ main (int argc, char* argv [])
 		ArithmeticServicePrx remoteService2 = ArithmeticServicePrx::checkedCast(base2);
 
 
-		if((!remoteService)||(!remoteService2))
+		if(!remoteService || !remoteService2)
 			throw "Invalid proxy";
 
 		// your client code here!

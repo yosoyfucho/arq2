@@ -42,7 +42,7 @@ UC3M::ArithmeticServiceI::addIntegers(::Ice::Int a,
 UC3M::ArithmeticServiceI::subtractIntegers(::Ice::Int a,
                                            ::Ice::Int b,
                                            const Ice::Current& current)
-{	
+{
   int resta;
   resta = b-a;
   return resta;
