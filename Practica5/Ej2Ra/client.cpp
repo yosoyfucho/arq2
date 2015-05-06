@@ -1,108 +1,81 @@
-#include "StringServiceI.h"
-#include "ArithmeticServiceI.h"
+#include "StringService.h"
+#include "ArithmeticService.h"
 #include <Ice/Ice.h>
-
-/*
-Compilar:
-gcc -I. -c StringService.cpp ArithmeticService.cpp server.cpp
-gcc -o server server.o StringService.o ArithmeticService.o -lIce -lIceUtil
-*/
 
 using namespace std;
 using namespace UC3M;
 
-
-::Ice::Int
-UC3M::StringServiceI::stringSize(const ::std::string& s,
-                                 const Ice::Current& current)
-{
-    return s.length();
-}
-
-::std::string
-UC3M::StringServiceI::toUpperCase(const ::std::string& s,
-                                  const Ice::Current& current)
-{
-    ::std::string ns(s);
-    ::std::transform(ns.begin(), ns.end(), ns.begin(), ::toupper);
-    return ns;
-}
-
-::Ice::Int
-UC3M::ArithmeticServiceI::addIntegers(::Ice::Int a,
-                                      ::Ice::Int b,
-                                      const Ice::Current& current)
-{
-   int suma;
-   suma = a + b;
-   return suma;
-}
-
-::Ice::Int
-UC3M::ArithmeticServiceI::subtractIntegers(::Ice::Int a,
-                                           ::Ice::Int b,
-                                           const Ice::Current& current)
-{
-  int resta;
-  resta = b-a;
-  return resta;
-}
-
+/*Compilar
+gcc -I. -c StringService.cpp ArithmeticService.cpp client.cpp
+gcc -o client client.o StringService.o ArithmeticService.o -lIce -lIceUtil
+*/
 
 int
-main (int argc, char* argv[])
+main (int argc, char* argv [])
 {
 	int status = 0;
-	Ice::CommunicatorPtr ic;
+	int a,b;
+	a = 3;
+	b = 8;
+
+	Ice :: CommunicatorPtr ic;
+	// new for Arithmetic
+	Ice :: CommunicatorPtr ic2;
 
 	try
 	{
-		ic = Ice ::initialize(argc,argv);
-		Ice:: ObjectAdapterPtr adapter =
-			ic->createObjectAdapterWithEndpoints("asii_adapter","default -p 10000");
+		ic = Ice :: initialize(argc,argv);
 
 		// new for Arithmetic
-		Ice:: ObjectAdapterPtr adapter2 =
-			ic->createObjectAdapterWithEndpoints("asii_adapter2","default -p 10001");
+		ic2 = Ice :: initialize(argc,argv);
 
-		Ice:: ObjectPtr object = new StringServiceI;
-
-		// new for Arithmetic
-		Ice:: ObjectPtr object2 = new ArithmeticServiceI;
-
-		adapter->add(object, ic->stringToIdentity("StringService"));
-		adapter->activate();
+		Ice :: ObjectPrx base1 = ic ->stringToProxy("StringService: default -h localhost -p 10000");
 
 		// new for Arithmetic
-		adapter2->add(object2, ic->stringToIdentity("ArithmeticService"));
-		adapter2->activate();
+		Ice :: ObjectPrx base2 = ic2 ->stringToProxy("ArithmeticService: default -h localhost -p 10001");
 
-		ic->waitForShutdown();
+		StringServicePrx remoteService = StringServicePrx::checkedCast(base1);
+
+		// new for Arithmetic
+		ArithmeticServicePrx remoteService2 = ArithmeticServicePrx::checkedCast(base2);
+
+
+		if(!remoteService || !remoteService2)
+			throw "Invalid proxy";
+
+		// your client code here!
+		cout << "Using StringService" << endl;
+		cout << "size of \"\" : "
+			 << remoteService->stringSize("") << endl;
+		cout << "size of \"a\" : "
+			 << remoteService->stringSize("a") << endl;
+		cout << "size of \"abcdef\" : "
+			 << remoteService->stringSize("abcdef") << endl;
+		cout << "toUpperCase of \"abcdef\" : "
+			 << remoteService->toUpperCase("abcdef") << endl;
+
+		// new for Arithmetic
+		cout << "Using ArithmeticService " << endl;
+		cout << "add of \"a + b\" : " << a << " + " << b << " = "
+			 << remoteService2->addIntegers(a,b) << endl;
+		cout << "subtract of \"b - a\" : " << b << " - " << a << " = "
+			 << remoteService2->subtractIntegers(a,b) << endl;
+
 	}
-	catch (const Ice::Exception& e)
+	catch (const Ice :: Exception& ex)
 	{
-		cerr << e << endl;
+		cerr << ex << endl;
 		status = 1;
 	}
-
 	catch (const char* msg)
 	{
 		cerr << msg << endl;
 		status = 1;
 	}
-
 	if (ic)
-	{
-		try
-		{
-			ic->destroy();
-		}
-		catch (const Ice::Exception& e)
-		{
-			cerr << e << endl;
-			status = 1;
-		}
-	}
+		ic -> destroy();
+	if (ic2)
+		ic2 -> destroy();
 
 	return status;
 }
