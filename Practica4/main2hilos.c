@@ -191,7 +191,7 @@ main (int argc, char * argv[])
     {
       printf("XXXX  Oh dear, something went wrong with mq_close()! %s\n", strerror(errno));
     }
-    if (mq_unlink(argv[1])== -1)
+    if (mq_unlink(queueName)== -1)
     {
       printf("XXXX  Oh dear, something went wrong with mq_unlink()! %s\n", strerror(errno));
     }
